@@ -11,12 +11,22 @@
     "docker:push": "docker push quokka-api",
     "docker:compose": "docker-compose up",
     "docker:compose:build": "docker-compose up --build",
-    "docker:compose:down": "docker-compose down"
+    "docker:compose:down": "docker-compose down",
+    "docker:compose:seed": "docker-compose --profile seed run seed",
+    "docker:db:backup": "docker cp quokka-api:/app/data/games.db ./games.db.backup",
+    "docker:db:restore": "docker cp ./games.db.backup quokka-api:/app/data/games.db",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "bun run src/db/migrate.ts",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "bun run src/db/seed.ts"
   },
   "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "drizzle-orm": "^0.40.0",
     "elysia": "1.2.25"
   },
   "devDependencies": {
-    "bun-types": "1.2.5"
+    "bun-types": "1.2.5",
+    "drizzle-kit": "^0.30.5"
   }
 }

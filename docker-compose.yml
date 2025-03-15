@@ -9,7 +9,25 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - DATABASE_URL=./data/games.db
+    volumes:
+      - db-data:/app/data
     restart: unless-stopped
-    # Uncomment the following lines if you need volumes for persistent data
-    # volumes:
-    #   - ./data:/app/data 
+
+  # Separate service for seeding the database (run manually when needed)
+  seed:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: quokka-api-seed
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=./data/games.db
+    volumes:
+      - db-data:/app/data
+    command: sh -c "bun run db:seed"
+    profiles:
+      - seed
+
+volumes:
+  db-data: 

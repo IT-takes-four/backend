@@ -3,4 +3,4 @@ node_modules
 .gitignore
 .env
 *.md
-.DS_Store 
+.DS_Store
