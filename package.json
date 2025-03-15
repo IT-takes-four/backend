@@ -4,7 +4,14 @@
   "module": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "docker:build": "docker build -t quokka-api .",
+    "docker:run": "docker run -p 3000:3000 quokka-api",
+    "docker:push": "docker push quokka-api",
+    "docker:compose": "docker-compose up",
+    "docker:compose:build": "docker-compose up --build",
+    "docker:compose:down": "docker-compose down"
   },
   "dependencies": {
     "elysia": "1.2.25"
