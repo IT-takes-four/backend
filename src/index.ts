@@ -1,4 +1,6 @@
 import { Elysia } from "elysia";
+import { eq } from "drizzle-orm";
+
 import {
   db,
   game,
@@ -11,13 +13,15 @@ import {
   screenshot,
   website,
 } from "./db";
-import { eq } from "drizzle-orm";
+import { getIGDBToken } from "./utils/igdb/token";
 
 const app = new Elysia()
   .get("/", () => "Hello Elysia")
 
   // Games endpoints
   .get("/games", async () => {
+    const token = await getIGDBToken();
+    console.log({ token });
     return await db.select().from(game).limit(100);
   })
   .get("/games/:id", async ({ params }) => {

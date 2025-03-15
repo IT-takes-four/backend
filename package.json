@@ -13,6 +13,9 @@
     "docker:compose:build": "docker-compose up --build",
     "docker:compose:down": "docker-compose down",
     "docker:compose:seed": "docker-compose --profile seed run seed",
+    "docker:compose:dev": "docker-compose -f docker-compose.dev.yml up -d",
+    "docker:compose:dev:down": "docker-compose -f docker-compose.dev.yml down",
+    "docker:compose:dev:restart": "bun run docker:compose:dev:down && bun run docker:compose:dev",
     "docker:db:backup": "docker cp quokka-api:/app/data/games.db ./games.db.backup",
     "docker:db:restore": "docker cp ./games.db.backup quokka-api:/app/data/games.db",
     "db:generate": "drizzle-kit generate",
@@ -22,8 +25,10 @@
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",
+    "axios": "^1.8.3",
     "drizzle-orm": "^0.40.0",
-    "elysia": "1.2.25"
+    "elysia": "1.2.25",
+    "ioredis": "^5.6.0"
   },
   "devDependencies": {
     "bun-types": "1.2.5",

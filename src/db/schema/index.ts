@@ -104,11 +104,7 @@ export const gameToPlatform = sqliteTable(
       .notNull()
       .references(() => platform.id, { onDelete: "cascade" }),
   },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.gameId, table.platformId] }),
-    };
-  }
+  (table) => [primaryKey({ columns: [table.gameId, table.platformId] })]
 );
 
 export const gameToGenre = sqliteTable(
@@ -121,11 +117,7 @@ export const gameToGenre = sqliteTable(
       .notNull()
       .references(() => genre.id, { onDelete: "cascade" }),
   },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.gameId, table.genreId] }),
-    };
-  }
+  (table) => [primaryKey({ columns: [table.gameId, table.genreId] })]
 );
 
 export const gameToGameMode = sqliteTable(
@@ -138,11 +130,7 @@ export const gameToGameMode = sqliteTable(
       .notNull()
       .references(() => gameMode.id, { onDelete: "cascade" }),
   },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.gameId, table.gameModeId] }),
-    };
-  }
+  (table) => [primaryKey({ columns: [table.gameId, table.gameModeId] })]
 );
 
 export const gameToType = sqliteTable(
@@ -155,11 +143,7 @@ export const gameToType = sqliteTable(
       .notNull()
       .references(() => type.id, { onDelete: "cascade" }),
   },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.gameId, table.typeId] }),
-    };
-  }
+  (table) => [primaryKey({ columns: [table.gameId, table.typeId] })]
 );
 
 // UserGame table (not in the original schema but mentioned in relations)

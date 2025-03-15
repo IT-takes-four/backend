@@ -1,23 +1,29 @@
 services:
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: quokka-api
+    image: oven/bun:latest
+    container_name: quokka-api-dev
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - PORT=3000
-      - DATABASE_URL=./data/games.db
+      - SQLITE_DATABASE_URL=./games.db
+      - REDIS_URL=redis://redis:6379
+      - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
+      - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
     volumes:
-      - sqlite-data:/app/data
+      - ./:/app
+      - ./games.db:/app/games.db
+      - node_modules:/app/node_modules
+    working_dir: /app
+    command: sh -c "bun install && bun run dev"
     restart: unless-stopped
     networks:
       - quokka-network
+
   postgres:
     image: postgres:17.4-alpine
-    container_name: quokka-postgres
+    container_name: quokka-postgres-dev
     restart: unless-stopped
     environment:
       POSTGRES_USER: quokka
@@ -37,6 +43,7 @@ services:
 
   redis:
     image: redis:7.4.2-alpine
+    container_name: quokka-redis-dev
     ports:
       - "6379:6379"
     volumes:
@@ -46,31 +53,14 @@ services:
     networks:
       - quokka-network
 
-  # Separate service for seeding the database (run manually when needed)
-  seed:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: quokka-api-seed
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=./data/games.db
-    volumes:
-      - sqlite-data:/app/data
-    command: sh -c "bun run db:seed"
-    profiles:
-      - seed
-
 volumes:
-  sqlite-data:
-    name: quokka-sqlite-data
   postgres-data:
-    name: quokka-postgres-data
+    name: quokka-postgres-data-dev
   redis-data:
-    name: quokka-redis-data
+    name: quokka-redis-data-dev
   node_modules:
-    name: quokka-node-modules
+    name: quokka-node-modules-dev
  
 networks:
   quokka-network:
-    driver: bridge
+    driver: bridge 
