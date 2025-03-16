@@ -14,6 +14,11 @@ import {
 } from "./db";
 import { gamesRouter } from "./routes/games";
 import { igdbRouter } from "./routes/igdb";
+import { startWorkerInBackground } from "./utils/redis/sqliteWriter";
+import { startSimilarGamesWorker } from "./utils/redis/similarGamesQueue";
+
+// Start the SQLite write worker in the background
+startWorkerInBackground();
 
 const app = new Elysia()
   .use(cors())
@@ -107,8 +112,15 @@ const app = new Elysia()
       .limit(1);
   })
 
-  .listen(3000);
+  .listen(3000, () => {
+    console.log(`🦊 Elysia is running at http://localhost:3000`);
 
-console.log(
-  `🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`
-);
+    // Start the similar games background worker
+    startSimilarGamesWorker(60000, 5)
+      .then((workerId) => {
+        console.log(`Similar games worker started with ID: ${workerId}`);
+      })
+      .catch((error) => {
+        console.error("Failed to start similar games worker:", error);
+      });
+  });

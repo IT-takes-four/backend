@@ -6,7 +6,10 @@ import type { IGDBGameResponse } from "./types";
 
 const MAIN_GAME_TYPES = [0, 8, 9];
 
-const searchIGDB = async (query: string, showOnlyGames: boolean = true) => {
+export const searchIGDB = async (
+  query: string,
+  showOnlyGames: boolean = true
+) => {
   try {
     console.log("Searching IGDB for:", query, "showOnlyGames:", showOnlyGames);
 

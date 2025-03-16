@@ -50,7 +50,6 @@ export const game = sqliteTable("game", {
   totalRating: real("total_rating"),
   involvedCompanies: text("involved_companies"),
   keywords: text("keywords"),
-  similarGames: text("similar_games"), // Store as JSON string
   updatedAt: integer("updated_at")
     .notNull()
     .default(Math.floor(Date.now() / 1000)),
@@ -92,6 +91,23 @@ export const website = sqliteTable("website", {
   trusted: integer("trusted", { mode: "boolean" }),
   typeId: integer("type_id").references(() => websiteType.id),
 });
+
+// Many-to-many relations
+export const gameToSimilarGame = sqliteTable(
+  "game_to_similar_game",
+  {
+    gameId: integer("game_id")
+      .notNull()
+      .references(() => game.id),
+    similarGameId: integer("similar_game_id")
+      .notNull()
+      .references(() => game.id),
+    createdAt: integer("created_at")
+      .notNull()
+      .default(Math.floor(Date.now() / 1000)),
+  },
+  (table) => [primaryKey({ columns: [table.gameId, table.similarGameId] })]
+);
 
 // Many-to-many relations
 export const gameToPlatform = sqliteTable(
