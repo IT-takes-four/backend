@@ -1,0 +1,13 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1742087883339,
+      "tag": "0000_curvy_shard",
+      "breakpoints": true
+    }
+  ]
+}

@@ -3,7 +3,6 @@
   "version": "1.0.50",
   "module": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
     "docker:build": "docker build -t quokka-api .",
@@ -19,11 +18,14 @@
     "docker:db:backup": "docker cp quokka-api:/app/data/games.db ./games.db.backup",
     "docker:db:restore": "docker cp ./games.db.backup quokka-api:/app/data/games.db",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "bun run src/db/migrate.ts",
+    "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "bun run src/db/seed.ts"
   },
   "dependencies": {
+    "@elysiajs/cors": "^1.2.0",
+    "@elysiajs/jwt": "^1.2.0",
+    "@elysiajs/swagger": "^1.2.2",
     "@libsql/client": "^0.14.0",
     "axios": "^1.8.3",
     "drizzle-orm": "^0.40.0",

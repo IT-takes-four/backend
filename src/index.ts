@@ -1,66 +1,46 @@
 import { Elysia } from "elysia";
+import { cors } from "@elysiajs/cors";
+import { swagger } from "@elysiajs/swagger";
+import { jwt } from "@elysiajs/jwt";
 import { eq } from "drizzle-orm";
 
 import {
   db,
-  game,
   platform,
   genre,
   gameMode,
   type as gameType,
   websiteType,
-  cover,
-  screenshot,
-  website,
 } from "./db";
-import { getIGDBToken } from "./utils/igdb/token";
+import { gamesRouter } from "./routes/games";
+import { igdbRouter } from "./routes/igdb";
 
 const app = new Elysia()
-  .get("/", () => "Hello Elysia")
-
-  // Games endpoints
-  .get("/games", async () => {
-    const token = await getIGDBToken();
-    console.log({ token });
-    return await db.select().from(game).limit(100);
-  })
-  .get("/games/:id", async ({ params }) => {
-    const { id } = params;
-    const gameData = await db
-      .select()
-      .from(game)
-      .where(eq(game.id, parseInt(id)))
-      .limit(1);
-
-    if (gameData.length === 0) {
-      return { error: "Game not found" };
-    }
-
-    // Get cover
-    const coverData = await db
-      .select()
-      .from(cover)
-      .where(eq(cover.gameId, parseInt(id)));
-
-    // Get screenshots
-    const screenshotData = await db
-      .select()
-      .from(screenshot)
-      .where(eq(screenshot.gameId, parseInt(id)));
-
-    // Get websites
-    const websiteData = await db
-      .select()
-      .from(website)
-      .where(eq(website.gameId, parseInt(id)));
-
-    return {
-      ...gameData[0],
-      cover: coverData[0] || null,
-      screenshots: screenshotData,
-      websites: websiteData,
-    };
-  })
+  .use(cors())
+  .use(
+    swagger({
+      documentation: {
+        info: {
+          title: "Quokka API",
+          version: "1.0.0",
+          description: "API for the Quokka game tracking application",
+        },
+        tags: [
+          { name: "games", description: "Game related endpoints" },
+          { name: "igdb", description: "IGDB integration endpoints" },
+        ],
+      },
+    })
+  )
+  .use(
+    jwt({
+      name: "jwt",
+      secret: process.env.JWT_SECRET || "supersecret",
+    })
+  )
+  .get("/", () => "Quokka API is running!")
+  .use(gamesRouter)
+  .use(igdbRouter)
 
   // Platforms endpoints
   .get("/platforms", async () => {

@@ -43,7 +43,7 @@ export const game = sqliteTable("game", {
   slug: text("slug").notNull(),
   summary: text("summary"),
   storyline: text("storyline"),
-  firstReleaseDate: integer("first_release_date"), // SQLite doesn't have a native DateTime type, store as Unix timestamp
+  firstReleaseDate: integer("first_release_date"),
   createdAt: integer("created_at")
     .notNull()
     .default(Math.floor(Date.now() / 1000)),
@@ -146,16 +146,6 @@ export const gameToType = sqliteTable(
   (table) => [primaryKey({ columns: [table.gameId, table.typeId] })]
 );
 
-// UserGame table (not in the original schema but mentioned in relations)
-export const userGame = sqliteTable("user_game", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  gameId: integer("game_id")
-    .notNull()
-    .references(() => game.id, { onDelete: "cascade" }),
-  platformId: integer("platform_id").references(() => platform.id),
-  // Add other fields as needed
-});
-
 // Relations
 export const gameRelations = relations(game, ({ many, one }) => ({
   cover: one(cover),
@@ -165,7 +155,6 @@ export const gameRelations = relations(game, ({ many, one }) => ({
   genres: many(gameToGenre, { relationName: "game_genres" }),
   modes: many(gameToGameMode, { relationName: "game_modes" }),
   types: many(gameToType, { relationName: "game_types" }),
-  userGames: many(userGame),
 }));
 
 export const coverRelations = relations(cover, ({ one }) => ({
@@ -195,7 +184,6 @@ export const websiteRelations = relations(website, ({ one }) => ({
 
 export const platformRelations = relations(platform, ({ many }) => ({
   games: many(gameToPlatform, { relationName: "platform_games" }),
-  userGames: many(userGame),
 }));
 
 export const genreRelations = relations(genre, ({ many }) => ({
@@ -263,16 +251,5 @@ export const gameToTypeRelations = relations(gameToType, ({ one }) => ({
     fields: [gameToType.typeId],
     references: [type.id],
     relationName: "type_games",
-  }),
-}));
-
-export const userGameRelations = relations(userGame, ({ one }) => ({
-  game: one(game, {
-    fields: [userGame.gameId],
-    references: [game.id],
-  }),
-  platform: one(platform, {
-    fields: [userGame.platformId],
-    references: [platform.id],
   }),
 }));
