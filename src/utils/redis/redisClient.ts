@@ -1,5 +1,9 @@
 import { Redis } from "ioredis";
 
+import { createLogger } from "../logger";
+
+const logger = createLogger("redis-client");
+
 const redisPassword = process.env.REDIS_PASSWORD || "";
 const redisUrl = process.env.REDIS_URL || "localhost:6379";
 const url = new URL(
@@ -21,11 +25,11 @@ const createRedisClient = () => {
   });
 
   client.on("error", (err: Error) => {
-    console.error("Redis Client Error:", err);
+    logger.error("Redis Client Error:", { error: err });
   });
 
   client.on("connect", () => {
-    console.log("Redis Client Connected");
+    logger.info("Redis Client Connected");
   });
 
   return client;

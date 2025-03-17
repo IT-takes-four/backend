@@ -16,8 +16,12 @@ import { gamesRouter } from "./routes/games";
 import { igdbRouter } from "./routes/igdb";
 import { startWorkerInBackground } from "./utils/redis/sqliteWriter";
 import { startSimilarGamesWorker } from "./utils/redis/similarGamesQueue";
+import logger, { LogLevel } from "./utils/logger";
 
-// Start the SQLite write worker in the background
+const logLevel = (process.env.LOG_LEVEL || "info") as LogLevel;
+logger.level = logLevel;
+logger.info(`Starting Quokka API with log level: ${logLevel}`);
+
 startWorkerInBackground();
 
 const app = new Elysia()
@@ -114,13 +118,16 @@ const app = new Elysia()
 
   .listen(3000, () => {
     console.log(`🦊 Elysia is running at http://localhost:3000`);
+    logger.info(`🦊 Elysia is running at http://localhost:3000`);
 
     // Start the similar games background worker
     startSimilarGamesWorker(60000, 5)
       .then((workerId) => {
         console.log(`Similar games worker started with ID: ${workerId}`);
+        logger.info(`Similar games worker started with ID: ${workerId}`);
       })
       .catch((error) => {
         console.error("Failed to start similar games worker:", error);
+        logger.error("Failed to start similar games worker:", { error });
       });
   });

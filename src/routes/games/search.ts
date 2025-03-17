@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { eq, like } from "drizzle-orm";
+import { like } from "drizzle-orm";
 
 import { db, game } from "../../db";
 import { getRedisClient } from "../../utils/redis/redisClient";
@@ -7,8 +7,10 @@ import { transformGameResponse } from "./utils";
 import { searchIGDB } from "../igdb/utils";
 import { enqueueGamesBatchWrite } from "../../utils/redis/sqliteWriter";
 import { enqueueSimilarGames } from "../../utils/redis/similarGamesQueue";
+import { createLogger } from "../../utils/logger";
 
-// Constants
+const logger = createLogger("games-search");
+
 const SEARCH_LOCK_TTL = 10; // 10 seconds
 const SEARCH_RESULTS_TTL = 86400; // 24 hours
 const GAME_DATA_TTL = 604800; // 7 days
@@ -39,7 +41,7 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
 
   if (lockExists) {
     // This is a duplicate request, subscribe to results
-    console.log(
+    logger.info(
       `Duplicate search for "${normalizedQuery}", waiting for results`
     );
 
@@ -100,7 +102,7 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
     }
 
     // Check SQLite for results
-    console.log(`Searching SQLite for "${normalizedQuery}"`);
+    logger.info(`Searching SQLite for "${normalizedQuery}"`);
     const startTime = Date.now();
 
     const dbGames = await db.query.game.findMany({
@@ -153,7 +155,7 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
       // Enqueue similar games for background processing
       // This won't block the response
       enqueueSimilarGames(gameIds).catch((error) => {
-        console.error("Error enqueueing similar games:", error);
+        logger.error("Error enqueueing similar games:", { error });
       });
 
       return {
@@ -168,7 +170,7 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
     }
 
     // If not found in SQLite, query IGDB
-    console.log(`Searching IGDB for "${normalizedQuery}"`);
+    logger.info(`Searching IGDB for "${normalizedQuery}"`);
     const igdbStartTime = Date.now();
     const igdbResults = await searchIGDB(normalizedQuery, true, limit);
     const igdbQueryTime = Date.now() - igdbStartTime;
@@ -184,7 +186,7 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
 
       // Enqueue write operations to SQLite using our queue system
       await enqueueGamesBatchWrite(igdbResults, searchId);
-      console.log(`Enqueued ${igdbResults.length} games for writing to SQLite`);
+      logger.info(`Enqueued ${igdbResults.length} games for writing to SQLite`);
 
       // Extract game IDs from results
       const igdbGameIds = igdbResults
@@ -194,7 +196,7 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
       // Enqueue similar games for background processing
       // This won't block the response
       enqueueSimilarGames(igdbGameIds).catch((error) => {
-        console.error("Error enqueueing similar games:", error);
+        logger.error("Error enqueueing similar games:", { error });
       });
 
       return {

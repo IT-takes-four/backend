@@ -1,6 +1,9 @@
 import axios from "axios";
 
 import { getRedisClient } from "../redis/redisClient";
+import { createLogger } from "../logger";
+
+const logger = createLogger("igdb-token");
 
 // Twitch tokens are valid for 60 days, but we refresh more frequently as a precaution
 const TOKEN_TTL = 24 * 60 * 60; // 24 hours
@@ -45,7 +48,7 @@ const requestNewToken = async (): Promise<string> => {
     return `Bearer ${response.data.access_token}`;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("Failed to get IGDB access token:", errorMessage);
+    logger.error("Failed to get IGDB access token:", { error: errorMessage });
     throw new Error("Failed to get IGDB access token");
   }
 };

@@ -5,6 +5,7 @@ import { RedisQueue, QueueJob } from "./redisQueue";
 import { getRedisClient } from "./redisClient";
 import { IGDBGameResponse } from "../../routes/igdb/types";
 import { transformIGDBResponse } from "../../routes/igdb/transformers";
+import { createLogger } from "../logger";
 
 import {
   game,
@@ -19,6 +20,8 @@ import {
   gameMode,
 } from "../../db/schema";
 import { storeSimilarGameRelationship } from "./similarGamesQueue";
+
+const logger = createLogger("sqlite-writer");
 
 const sqliteWriteQueue = new RedisQueue("sqlite_write");
 
@@ -44,7 +47,7 @@ export const enqueueGamesBatchWrite = async (
 };
 
 const processJob = async (job: QueueJob): Promise<void> => {
-  console.log(`Processing job ${job.id} of type ${job.type}`);
+  logger.info(`Processing job ${job.id} of type ${job.type}`);
 
   try {
     switch (job.type) {
@@ -61,18 +64,18 @@ const processJob = async (job: QueueJob): Promise<void> => {
         break;
 
       default:
-        console.warn(`Unknown job type: ${job.type}`);
+        logger.warn(`Unknown job type: ${job.type}`);
     }
 
     await sqliteWriteQueue.complete(job.id);
   } catch (error) {
-    console.error(`Error processing job ${job.id}:`, error);
+    logger.error(`Error processing job ${job.id}:`, { error });
     await sqliteWriteQueue.fail(job.id, error as Error);
   }
 };
 
 const insertGame = async (gameData: any) => {
-  console.log(`Processing game: ${gameData.name}`);
+  logger.info(`Processing game: ${gameData.name}`);
 
   try {
     // Check if game already exists outside transaction
@@ -81,7 +84,7 @@ const insertGame = async (gameData: any) => {
     });
 
     if (existingGame) {
-      console.log(`Game ${gameData.name} already exists, skipping update`);
+      logger.info(`Game ${gameData.name} already exists, skipping update`);
       return; // Skip update completely
     }
 
@@ -241,20 +244,20 @@ const insertGame = async (gameData: any) => {
     if (gameData.similar_games && gameData.similar_games.length > 0) {
       // Store similar game relationships in Redis for background processing
       await storeSimilarGameRelationship(gameData.id, gameData.similar_games);
-      console.log(
+      logger.info(
         `Queued ${gameData.similar_games.length} similar game relationships for ${gameData.name}`
       );
     }
 
-    console.log(`Successfully inserted new game: ${gameData.name}`);
+    logger.info(`Successfully inserted new game: ${gameData.name}`);
   } catch (error) {
-    console.error(`Error processing game ${gameData.name}:`, error);
+    logger.error(`Error processing game ${gameData.name}:`, { error });
     throw error;
   }
 };
 
 const insertGamesBatch = async (games: any[], searchId: string) => {
-  console.log(
+  logger.info(
     `Processing batch of ${games.length} games for search ${searchId}`
   );
   const redis = getRedisClient();
@@ -270,12 +273,12 @@ const insertGamesBatch = async (games: any[], searchId: string) => {
     const existingGameIds = new Set(existingGames.map((g) => g.id));
     const newGames = games.filter((g) => !existingGameIds.has(g.id));
 
-    console.log(
+    logger.info(
       `Found ${existingGameIds.size} existing games, inserting ${newGames.length} new games`
     );
 
     if (newGames.length === 0) {
-      console.log(
+      logger.info(
         `All games already exist for search ${searchId}, skipping batch insert`
       );
       await redis.set(`write_status:${searchId}`, "complete", "EX", 3600); // 1 hour TTL
@@ -442,27 +445,28 @@ const insertGamesBatch = async (games: any[], searchId: string) => {
             gameData.id,
             gameData.similar_games
           );
-          console.log(
+          logger.info(
             `Queued ${gameData.similar_games.length} similar game relationships for ${gameData.name}`
           );
         } catch (error) {
-          console.error(
-            `Error queueing similar games for ${gameData.name}:`,
-            error
-          );
+          logger.error(`Error queueing similar games for ${gameData.name}:`, {
+            error,
+          });
           // Continue with other games
         }
       }
     }
 
-    console.log(
+    logger.info(
       `Successfully inserted ${newGames.length} new games for search ${searchId}`
     );
 
     // Update the write status in Redis
     await redis.set(`write_status:${searchId}`, "complete", "EX", 3600); // 1 hour TTL
   } catch (error) {
-    console.error(`Error inserting games batch for search ${searchId}:`, error);
+    logger.error(`Error inserting games batch for search ${searchId}:`, {
+      error,
+    });
     await redis.set(
       `write_status:${searchId}`,
       `error:${(error as Error).message}`,
@@ -474,7 +478,7 @@ const insertGamesBatch = async (games: any[], searchId: string) => {
 };
 
 const updateGame = async (gameData: any) => {
-  console.log(`Checking if game needs update: ${gameData.name}`);
+  logger.info(`Checking if game needs update: ${gameData.name}`);
 
   try {
     // Check if game exists
@@ -483,7 +487,7 @@ const updateGame = async (gameData: any) => {
     });
 
     if (!existingGame) {
-      console.warn(
+      logger.warn(
         `Game ${gameData.name} (ID: ${gameData.id}) not found, cannot update`
       );
       return;
@@ -689,9 +693,9 @@ const updateGame = async (gameData: any) => {
       }
     });
 
-    console.log(`Successfully updated game: ${gameData.name}`);
+    logger.info(`Successfully updated game: ${gameData.name}`);
   } catch (error) {
-    console.error(`Error updating game ${gameData.name}:`, error);
+    logger.error(`Error updating game ${gameData.name}:`, { error });
     throw error;
   }
 };
@@ -700,7 +704,7 @@ export const startSQLiteWriteWorker = async (
   pollInterval: number = 1000,
   shouldContinue: () => boolean = () => true
 ) => {
-  console.log("Starting SQLite write worker");
+  logger.info("Starting SQLite write worker");
 
   while (shouldContinue()) {
     const job = await sqliteWriteQueue.dequeue();
@@ -713,13 +717,14 @@ export const startSQLiteWriteWorker = async (
     }
   }
 
-  console.log("SQLite write worker stopped");
+  logger.info("SQLite write worker stopped");
 };
 
 // Helper to start the worker in the background
 export const startWorkerInBackground = () => {
   // This would typically be in a separate process in production
   // For simplicity, we're just using a setTimeout here
+  logger.info("Starting SQLite write worker in background");
   setTimeout(() => {
     startSQLiteWriteWorker();
   }, 0);

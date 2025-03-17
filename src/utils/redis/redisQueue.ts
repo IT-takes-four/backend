@@ -1,4 +1,7 @@
 import { getRedisClient } from "./redisClient";
+import { createLogger } from "../logger";
+
+const logger = createLogger("redis-queue");
 
 export interface QueueJob<T = any> {
   id: string;
@@ -40,7 +43,7 @@ export class RedisQueue {
     };
 
     await redis.lpush(this.queueName, JSON.stringify(job));
-    console.log(`Enqueued job ${jobId} to ${this.queueName}`);
+    logger.info(`Enqueued job ${jobId} to ${this.queueName}`);
 
     return jobId;
   }
@@ -70,7 +73,7 @@ export class RedisQueue {
 
       return job;
     } catch (error) {
-      console.error("Error parsing job data:", error);
+      logger.error("Error parsing job data:", { error });
       // Remove invalid job from processing queue
       await redis.rpop(this.processingQueueName);
       return null;
@@ -87,7 +90,7 @@ export class RedisQueue {
 
   async fail(jobId: string, error: Error): Promise<void> {
     const redis = getRedisClient();
-    console.error(`Job ${jobId} failed:`, error);
+    logger.error(`Job ${jobId} failed:`, { error });
 
     // Find the job in the processing queue
     const processingJobs = await redis.lrange(this.processingQueueName, 0, -1);
@@ -114,7 +117,9 @@ export class RedisQueue {
           break;
         }
       } catch (parseError) {
-        console.error("Error parsing job in processing queue:", parseError);
+        logger.error("Error parsing job in processing queue:", {
+          error: parseError,
+        });
       }
     }
   }
@@ -133,7 +138,7 @@ export class RedisQueue {
           break;
         }
       } catch (error) {
-        console.error("Error parsing job in processing queue:", error);
+        logger.error("Error parsing job in processing queue:", { error });
       }
     }
   }

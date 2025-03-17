@@ -7,13 +7,15 @@ import { db } from "../../db";
 import { game, gameToSimilarGame } from "../../db/schema";
 import { enqueueGameWrite } from "./sqliteWriter";
 import { fetchIGDBByIds } from "../../routes/igdb/utils";
+import { createLogger } from "../logger";
 
-// Constants
 const SIMILAR_GAMES_QUEUE = "similar_games";
 const SIMILAR_GAMES_PENDING = "similar_games:pending";
 const SIMILAR_GAMES_PROCESSED = "similar_games:processed";
 const SIMILAR_GAMES_RELATIONSHIPS = "similar_games:relationships"; // Redis hash storing game -> similar games
 const SYSTEM_BUSY_THRESHOLD = 10;
+
+const logger = createLogger("similar-games-queue");
 
 // Create a queue for similar games processing
 const similarGamesQueue = new RedisQueue(SIMILAR_GAMES_QUEUE);
@@ -43,8 +45,8 @@ export const storeSimilarGameRelationship = async (
   // Queue the game for relationship processing
   await redis.sadd(SIMILAR_GAMES_PENDING, gameId.toString());
 
-  console.log(
-    `[SimilarGames] Stored ${validIds.length} similar game relationships for game ${gameId}`
+  logger.info(
+    `Stored ${validIds.length} similar game relationships for game ${gameId}`
   );
 
   // We don't immediately try to fetch similar games
@@ -75,9 +77,7 @@ export const enqueueSimilarGames = async (gameIds: number[]): Promise<void> => {
 
   if (missingIds.length === 0) return;
 
-  console.log(
-    `[SimilarGames] Fetching ${missingIds.length} missing games from IGDB`
-  );
+  logger.info(`Fetching ${missingIds.length} missing games from IGDB`);
 
   // Fetch missing games in batches
   const BATCH_SIZE = 25;
@@ -87,21 +87,15 @@ export const enqueueSimilarGames = async (gameIds: number[]): Promise<void> => {
 
     try {
       // Fetch the batch from IGDB using the new function
-      console.log(
-        `[SimilarGames] Fetching batch of games with IDs: ${batch.join(",")}`
-      );
+      logger.info(`Fetching batch of games with IDs: ${batch.join(",")}`);
       const results = await fetchIGDBByIds(numericBatch, false); // Don't filter by game type to get all similar games
 
       if (results.length === 0) {
-        console.log(
-          `[SimilarGames] No games found for IDs: ${batch.join(",")}`
-        );
+        logger.info(`No games found for IDs: ${batch.join(",")}`);
         continue;
       }
 
-      console.log(
-        `[SimilarGames] Found ${results.length} games, queueing for writing`
-      );
+      logger.info(`Found ${results.length} games, queueing for writing`);
 
       // Queue each game for writing to SQLite
       for (const gameData of results) {
@@ -121,7 +115,7 @@ export const enqueueSimilarGames = async (gameIds: number[]): Promise<void> => {
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     } catch (error) {
-      console.error(`[SimilarGames] Error fetching batch of games:`, error);
+      logger.error(`Error fetching batch of games:`, { error });
       // Continue with next batch
     }
   }
@@ -137,8 +131,8 @@ export const processSimilarGamesBatch = async (
     (await sqliteWriteQueue.getProcessingLength());
 
   if (mainQueueSize > SYSTEM_BUSY_THRESHOLD) {
-    console.log(
-      `[SimilarGames] System busy with ${mainQueueSize} main tasks, skipping similar games processing`
+    logger.info(
+      `System busy with ${mainQueueSize} main tasks, skipping similar games processing`
     );
     return;
   }
@@ -150,7 +144,7 @@ export const processSimilarGamesBatch = async (
 
   if (!gameIds || gameIds.length === 0) return;
 
-  console.log(`[SimilarGames] Processing batch of ${gameIds.length} games`);
+  logger.info(`Processing batch of ${gameIds.length} games`);
 
   // Process each game
   for (const gameId of gameIds) {
@@ -165,7 +159,7 @@ export const processSimilarGamesBatch = async (
         await redis.sadd(SIMILAR_GAMES_PENDING, gameId);
       }
     } catch (error) {
-      console.error(`[SimilarGames] Error processing game ${gameId}:`, error);
+      logger.error(`Error processing game ${gameId}:`, { error });
       // Put back in pending set if failed
       await redis.sadd(SIMILAR_GAMES_PENDING, gameId);
     }
@@ -174,11 +168,11 @@ export const processSimilarGamesBatch = async (
 
 async function processSimilarGame(gameId: number): Promise<boolean> {
   if (!gameId || isNaN(gameId) || gameId <= 0) {
-    console.error(`[SimilarGames] Invalid game ID: ${gameId}`);
+    logger.error(`Invalid game ID: ${gameId}`);
     return false;
   }
 
-  console.log(`[SimilarGames] Processing similar games for game ID: ${gameId}`);
+  logger.info(`Processing similar games for game ID: ${gameId}`);
 
   try {
     const redis = getRedisClient();
@@ -190,9 +184,7 @@ async function processSimilarGame(gameId: number): Promise<boolean> {
     });
 
     if (!existingGame) {
-      console.log(
-        `[SimilarGames] Game ${gameId} not found in database, skipping`
-      );
+      logger.info(`Game ${gameId} not found in database, skipping`);
       return false; // Try again later
     }
 
@@ -203,7 +195,7 @@ async function processSimilarGame(gameId: number): Promise<boolean> {
     );
 
     if (!similarGamesJson) {
-      console.log(`[SimilarGames] No similar games found for game ${gameId}`);
+      logger.info(`No similar games found for game ${gameId}`);
 
       // If we don't have similar games info, fetch it from IGDB
       const results = await fetchIGDBByIds([gameId], false);
@@ -213,9 +205,7 @@ async function processSimilarGame(gameId: number): Promise<boolean> {
         !results[0].similar_games ||
         results[0].similar_games.length === 0
       ) {
-        console.log(
-          `[SimilarGames] No similar games found in IGDB for game ${gameId}`
-        );
+        logger.info(`No similar games found in IGDB for game ${gameId}`);
         return true; // Mark as processed
       }
 
@@ -228,7 +218,7 @@ async function processSimilarGame(gameId: number): Promise<boolean> {
     const similarGameIds = JSON.parse(similarGamesJson) as string[];
 
     if (similarGameIds.length === 0) {
-      console.log(`[SimilarGames] Empty similar games list for game ${gameId}`);
+      logger.info(`Empty similar games list for game ${gameId}`);
       return true; // Mark as processed
     }
 
@@ -242,9 +232,7 @@ async function processSimilarGame(gameId: number): Promise<boolean> {
     const existingIds = existingGames.map((g) => g.id);
 
     if (existingIds.length === 0) {
-      console.log(
-        `[SimilarGames] No similar games exist in database yet for game ${gameId}`
-      );
+      logger.info(`No similar games exist in database yet for game ${gameId}`);
 
       // Queue the missing games for fetching
       await enqueueSimilarGames(numericIds);
@@ -257,8 +245,8 @@ async function processSimilarGame(gameId: number): Promise<boolean> {
       const existingIdSet = new Set(existingIds);
       const missingIds = numericIds.filter((id) => !existingIdSet.has(id));
 
-      console.log(
-        `[SimilarGames] Queueing ${missingIds.length} missing similar games for fetching`
+      logger.info(
+        `Queueing ${missingIds.length} missing similar games for fetching`
       );
 
       await enqueueSimilarGames(missingIds);
@@ -280,8 +268,8 @@ async function processSimilarGame(gameId: number): Promise<boolean> {
     );
 
     if (newRelationIds.length === 0) {
-      console.log(
-        `[SimilarGames] All existing similar games already have relationships for game ${gameId}`
+      logger.info(
+        `All existing similar games already have relationships for game ${gameId}`
       );
 
       // If we've created all possible relationships, check if we need to try again later
@@ -291,9 +279,7 @@ async function processSimilarGame(gameId: number): Promise<boolean> {
           (id) => !existingIdSet.has(id)
         );
 
-        console.log(
-          `[SimilarGames] ${stillMissingIds.length} similar games still missing for game ${gameId}`
-        );
+        logger.info(`Similar games still missing for game ${gameId}`);
 
         // Try to fetch the missing games again
         await enqueueSimilarGames(stillMissingIds);
@@ -305,8 +291,8 @@ async function processSimilarGame(gameId: number): Promise<boolean> {
     }
 
     // Step 5: Create new relationships
-    console.log(
-      `[SimilarGames] Creating ${newRelationIds.length} new relationships for game ${gameId}`
+    logger.info(
+      `Creating ${newRelationIds.length} new relationships for game ${gameId}`
     );
 
     try {
@@ -334,16 +320,15 @@ async function processSimilarGame(gameId: number): Promise<boolean> {
         }
       });
 
-      console.log(
-        `[SimilarGames] Created ${
+      logger.info(
+        `Created ${
           newRelationIds.length * 2
         } bidirectional relationships for game ${gameId}`
       );
     } catch (error: any) {
-      console.error(
-        `[SimilarGames] Error creating relationships for game ${gameId}:`,
-        error
-      );
+      logger.error(`Error creating relationships for game ${gameId}:`, {
+        error,
+      });
       return false; // Try again later
     }
 
@@ -352,9 +337,7 @@ async function processSimilarGame(gameId: number): Promise<boolean> {
       const existingIdSet = new Set(existingIds);
       const stillMissingIds = numericIds.filter((id) => !existingIdSet.has(id));
 
-      console.log(
-        `[SimilarGames] ${stillMissingIds.length} similar games still missing for game ${gameId}`
-      );
+      logger.info(`Similar games still missing for game ${gameId}`);
 
       // Try to fetch the missing games again
       await enqueueSimilarGames(stillMissingIds);
@@ -364,10 +347,7 @@ async function processSimilarGame(gameId: number): Promise<boolean> {
 
     return true; // Mark as processed
   } catch (error) {
-    console.error(
-      `[SimilarGames] Unexpected error processing game ${gameId}:`,
-      error
-    );
+    logger.error(`Unexpected error processing game ${gameId}:`, { error });
     return false; // Try again later
   }
 }
@@ -379,8 +359,8 @@ export const startSimilarGamesWorker = async (
   intervalMs: number = 60000,
   batchSize: number = 5
 ): Promise<NodeJS.Timer> => {
-  console.log(
-    `[SimilarGames] Starting worker (interval: ${intervalMs}ms, batch size: ${batchSize})`
+  logger.info(
+    `Starting worker (interval: ${intervalMs}ms, batch size: ${batchSize})`
   );
 
   // Initial run
@@ -391,7 +371,7 @@ export const startSimilarGamesWorker = async (
     try {
       await processSimilarGamesBatch(batchSize);
     } catch (error) {
-      console.error(`[SimilarGames] Error in worker:`, error);
+      logger.error(`Error in worker:`, { error });
     }
   }, intervalMs);
 
@@ -402,7 +382,7 @@ export const startSimilarGamesWorker = async (
  * Stop the background worker
  */
 export const stopSimilarGamesWorker = (intervalId: NodeJS.Timer): void => {
-  console.log(`[SimilarGames] Stopping worker`);
+  logger.info(`Stopping worker`);
   clearInterval(intervalId);
 };
 

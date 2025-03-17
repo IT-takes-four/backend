@@ -1,6 +1,9 @@
 import { getIGDBToken } from "../../utils/igdb/token";
 import { transformIGDBResponse } from "./transformers";
 import type { IGDBGameResponse } from "./types";
+import { createLogger } from "../../utils/logger";
+
+const logger = createLogger("igdb");
 
 const MAIN_GAME_TYPES = [0, 8, 9];
 
@@ -10,7 +13,7 @@ export const searchIGDB = async (
   limit: number = 50
 ) => {
   try {
-    console.log("Searching IGDB for:", query, "showOnlyGames:", showOnlyGames);
+    logger.info("Searching IGDB for:", { query, showOnlyGames });
 
     const accessToken = await getIGDBToken();
 
@@ -51,7 +54,7 @@ export const searchIGDB = async (
     const data = (await response.json()) as IGDBGameResponse[];
     return data.map(transformIGDBResponse);
   } catch (error) {
-    console.error("IGDB search error:", error);
+    logger.error("IGDB search error:", { error });
     return [];
   }
 };
@@ -63,9 +66,10 @@ export const fetchIGDBByIds = async (
   try {
     if (!ids || ids.length === 0) return [];
 
-    console.log(
-      `Fetching ${ids.length} games from IGDB by IDs: ${ids.join(",")}`
-    );
+    logger.info(`Fetching games from IGDB by IDs`, {
+      count: ids.length,
+      ids: ids.join(","),
+    });
 
     const accessToken = await getIGDBToken();
 
@@ -106,7 +110,7 @@ export const fetchIGDBByIds = async (
     const data = await response.json();
     return data as IGDBGameResponse[];
   } catch (error) {
-    console.error("Error fetching games by IDs:", error);
+    logger.error("Error fetching games by IDs:", { error });
     return [];
   }
 };

@@ -9,7 +9,11 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - DATABASE_URL=./data/games.db
+      - SQLITE_DATABASE_URL=./games.db
+      - REDIS_URL=redis://redis:6379
+      - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
+      - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
+      - LOG_LEVEL=${LOG_LEVEL}
     volumes:
       - sqlite-data:/app/data
     restart: unless-stopped
