@@ -5,7 +5,8 @@ import { RedisQueue, QueueJob } from "./redisQueue";
 import { getRedisClient } from "./redisClient";
 import { IGDBGameResponse } from "../../routes/igdb/types";
 import { transformIGDBResponse } from "../../routes/igdb/transformers";
-import { createLogger } from "../logger";
+import { getCurrentTimestamp } from "../time";
+import { createLogger } from "../enhancedLogger";
 
 import {
   game,
@@ -18,6 +19,8 @@ import {
   platform,
   genre,
   gameMode,
+  type,
+  gameToType,
 } from "../../db/schema";
 import { storeSimilarGameRelationship } from "./similarGamesQueue";
 
@@ -69,7 +72,12 @@ const processJob = async (job: QueueJob): Promise<void> => {
 
     await sqliteWriteQueue.complete(job.id);
   } catch (error) {
-    logger.error(`Error processing job ${job.id}:`, { error });
+    logger.exception(error, {
+      context: "SQLite writer",
+      operation: "processJob",
+      jobId: job.id,
+      jobType: job.type,
+    });
     await sqliteWriteQueue.fail(job.id, error as Error);
   }
 };
@@ -101,8 +109,8 @@ const insertGame = async (gameData: any) => {
         totalRating: gameData.total_rating,
         involvedCompanies: gameData.involved_companies,
         keywords: gameData.keywords,
-        createdAt: Math.floor(Date.now() / 1000),
-        updatedAt: Math.floor(Date.now() / 1000),
+        createdAt: getCurrentTimestamp(),
+        updatedAt: getCurrentTimestamp(),
         isPopular: gameData.isPopular || false,
       });
 
@@ -238,6 +246,37 @@ const insertGame = async (gameData: any) => {
           });
         }
       }
+
+      // Handle game types (many-to-many)
+      if (gameData.game_types && gameData.game_types.length > 0) {
+        // Insert game types that don't exist yet
+        for (const gameTypeData of gameData.game_types) {
+          // Check if type exists
+          const existingType = await tx.query.type.findFirst({
+            where: eq(type.type, gameTypeData.type),
+          });
+
+          let typeId;
+          if (existingType) {
+            typeId = existingType.id;
+          } else {
+            // Insert new type
+            const result = await tx
+              .insert(type)
+              .values({
+                type: gameTypeData.type,
+              })
+              .returning({ id: type.id });
+            typeId = result[0].id;
+          }
+
+          // Create relationship
+          await tx.insert(gameToType).values({
+            gameId: gameData.id,
+            typeId: typeId,
+          });
+        }
+      }
     });
 
     // Handle similar games relationships in a separate transaction
@@ -251,7 +290,12 @@ const insertGame = async (gameData: any) => {
 
     logger.info(`Successfully inserted new game: ${gameData.name}`);
   } catch (error) {
-    logger.error(`Error processing game ${gameData.name}:`, { error });
+    logger.exception(error, {
+      context: "SQLite writer",
+      operation: "insertGame",
+      gameId: gameData.id,
+      gameName: gameData.name,
+    });
     throw error;
   }
 };
@@ -299,8 +343,8 @@ const insertGamesBatch = async (games: any[], searchId: string) => {
           totalRating: gameData.total_rating,
           involvedCompanies: gameData.involved_companies,
           keywords: gameData.keywords,
-          createdAt: Math.floor(Date.now() / 1000),
-          updatedAt: Math.floor(Date.now() / 1000),
+          createdAt: getCurrentTimestamp(),
+          updatedAt: getCurrentTimestamp(),
           isPopular: gameData.isPopular || false,
         });
 
@@ -433,6 +477,37 @@ const insertGamesBatch = async (games: any[], searchId: string) => {
             });
           }
         }
+
+        // Handle game types (many-to-many)
+        if (gameData.game_types && gameData.game_types.length > 0) {
+          // Insert game types that don't exist yet
+          for (const gameTypeData of gameData.game_types) {
+            // Check if type exists
+            const existingType = await tx.query.type.findFirst({
+              where: eq(type.type, gameTypeData.type),
+            });
+
+            let typeId;
+            if (existingType) {
+              typeId = existingType.id;
+            } else {
+              // Insert new type
+              const result = await tx
+                .insert(type)
+                .values({
+                  type: gameTypeData.type,
+                })
+                .returning({ id: type.id });
+              typeId = result[0].id;
+            }
+
+            // Create relationship
+            await tx.insert(gameToType).values({
+              gameId: gameData.id,
+              typeId: typeId,
+            });
+          }
+        }
       }
     });
 
@@ -449,8 +524,11 @@ const insertGamesBatch = async (games: any[], searchId: string) => {
             `Queued ${gameData.similar_games.length} similar game relationships for ${gameData.name}`
           );
         } catch (error) {
-          logger.error(`Error queueing similar games for ${gameData.name}:`, {
-            error,
+          logger.exception(error, {
+            context: "SQLite writer",
+            operation: "queueSimilarGames",
+            gameId: gameData.id,
+            gameName: gameData.name,
           });
           // Continue with other games
         }
@@ -464,9 +542,13 @@ const insertGamesBatch = async (games: any[], searchId: string) => {
     // Update the write status in Redis
     await redis.set(`write_status:${searchId}`, "complete", "EX", 3600); // 1 hour TTL
   } catch (error) {
-    logger.error(`Error inserting games batch for search ${searchId}:`, {
-      error,
+    logger.exception(error, {
+      context: "SQLite writer",
+      operation: "insertGamesBatch",
+      searchId,
+      gamesCount: games.length,
     });
+
     await redis.set(
       `write_status:${searchId}`,
       `error:${(error as Error).message}`,
@@ -507,7 +589,7 @@ const updateGame = async (gameData: any) => {
           totalRating: gameData.total_rating,
           involvedCompanies: gameData.involved_companies,
           keywords: gameData.keywords,
-          updatedAt: Math.floor(Date.now() / 1000),
+          updatedAt: getCurrentTimestamp(),
           isPopular: gameData.isPopular || false,
         })
         .where(eq(game.id, gameData.id));
@@ -691,11 +773,52 @@ const updateGame = async (gameData: any) => {
           }
         }
       }
+
+      // Handle game types if provided
+      if (gameData.game_types) {
+        // Delete existing type relationships
+        await tx.delete(gameToType).where(eq(gameToType.gameId, gameData.id));
+
+        // Insert new type relationships
+        if (gameData.game_types.length > 0) {
+          for (const gameTypeData of gameData.game_types) {
+            // Check if type exists
+            const existingType = await tx.query.type.findFirst({
+              where: eq(type.type, gameTypeData.type),
+            });
+
+            let typeId;
+            if (existingType) {
+              typeId = existingType.id;
+            } else {
+              // Insert new type
+              const result = await tx
+                .insert(type)
+                .values({
+                  type: gameTypeData.type,
+                })
+                .returning({ id: type.id });
+              typeId = result[0].id;
+            }
+
+            // Create relationship
+            await tx.insert(gameToType).values({
+              gameId: gameData.id,
+              typeId: typeId,
+            });
+          }
+        }
+      }
     });
 
     logger.info(`Successfully updated game: ${gameData.name}`);
   } catch (error) {
-    logger.error(`Error updating game ${gameData.name}:`, { error });
+    logger.exception(error, {
+      context: "SQLite writer",
+      operation: "updateGame",
+      gameId: gameData.id,
+      gameName: gameData.name,
+    });
     throw error;
   }
 };
@@ -704,27 +827,36 @@ export const startSQLiteWriteWorker = async (
   pollInterval: number = 1000,
   shouldContinue: () => boolean = () => true
 ) => {
-  logger.info("Starting SQLite write worker");
+  logger.system("Starting SQLite write worker");
 
   while (shouldContinue()) {
-    const job = await sqliteWriteQueue.dequeue();
+    try {
+      const job = await sqliteWriteQueue.dequeue();
 
-    if (job) {
-      await processJob(job);
-    } else {
-      // No jobs in the queue, wait before polling again
+      if (job) {
+        await processJob(job);
+      } else {
+        // No jobs in the queue, wait before polling again
+        await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      }
+    } catch (error) {
+      logger.exception(error, {
+        context: "SQLite writer",
+        operation: "startSQLiteWriteWorker",
+      });
+      // Wait before trying again to avoid tight error loops
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
     }
   }
 
-  logger.info("SQLite write worker stopped");
+  logger.system("SQLite write worker stopped");
 };
 
 // Helper to start the worker in the background
 export const startWorkerInBackground = () => {
   // This would typically be in a separate process in production
   // For simplicity, we're just using a setTimeout here
-  logger.info("Starting SQLite write worker in background");
+  logger.system("Starting SQLite write worker in background");
   setTimeout(() => {
     startSQLiteWriteWorker();
   }, 0);

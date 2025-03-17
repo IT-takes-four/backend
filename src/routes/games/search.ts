@@ -7,7 +7,8 @@ import { transformGameResponse } from "./utils";
 import { searchIGDB } from "../igdb/utils";
 import { enqueueGamesBatchWrite } from "../../utils/redis/sqliteWriter";
 import { enqueueSimilarGames } from "../../utils/redis/similarGamesQueue";
-import { createLogger } from "../../utils/logger";
+import { createLogger } from "../../utils/enhancedLogger";
+import { getCurrentTimestamp } from "../../utils/time";
 
 const logger = createLogger("games-search");
 
@@ -32,7 +33,7 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const redis = getRedisClient();
-  const searchId = `search:${normalizedQuery}:${Math.floor(Date.now() / 1000)}`;
+  const searchId = `search:${normalizedQuery}:${getCurrentTimestamp()}`;
   const searchLockKey = `search_processing:${normalizedQuery}`;
   const searchCacheKey = `search:${normalizedQuery}`;
 
@@ -126,6 +127,11 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
             genre: true,
           },
         },
+        types: {
+          with: {
+            type: true,
+          },
+        },
         similarGames: {
           with: {
             similarGame: true,
@@ -155,7 +161,11 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
       // Enqueue similar games for background processing
       // This won't block the response
       enqueueSimilarGames(gameIds).catch((error) => {
-        logger.error("Error enqueueing similar games:", { error });
+        logger.exception(error, {
+          context: "Games search",
+          operation: "enqueueSimilarGames",
+          gameIds: gameIds.join(","),
+        });
       });
 
       return {
@@ -196,7 +206,11 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
       // Enqueue similar games for background processing
       // This won't block the response
       enqueueSimilarGames(igdbGameIds).catch((error) => {
-        logger.error("Error enqueueing similar games:", { error });
+        logger.exception(error, {
+          context: "Games search",
+          operation: "enqueueSimilarGames",
+          gameIds: igdbGameIds.join(","),
+        });
       });
 
       return {

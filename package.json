@@ -1,7 +1,7 @@
 {
   "name": "quokka-api",
   "version": "1.0.50",
-  "module": "src/index.js",
+  "module": "src/index.ts",
   "scripts": {
     "dev": "bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
@@ -26,12 +26,14 @@
     "@elysiajs/cors": "^1.2.0",
     "@elysiajs/jwt": "^1.2.0",
     "@elysiajs/swagger": "^1.2.2",
-    "@libsql/client": "^0.14.0",
+    "@libsql/client": "^0.15.0",
+    "@sentry/bun": "^9.5.0",
     "axios": "^1.8.3",
-    "drizzle-orm": "^0.40.0",
+    "drizzle-orm": "^0.40.1",
     "elysia": "1.2.25",
     "ioredis": "^5.6.0",
-    "winston": "^3.17.0"
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
     "bun-types": "1.2.5",

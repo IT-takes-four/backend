@@ -1,11 +1,16 @@
 import { getIGDBToken } from "../../utils/igdb/token";
 import { transformIGDBResponse } from "./transformers";
 import type { IGDBGameResponse } from "./types";
-import { createLogger } from "../../utils/logger";
+import { createLogger } from "../../utils/enhancedLogger";
+import { GameTypeEnum } from "../../db/schema";
 
 const logger = createLogger("igdb");
 
-const MAIN_GAME_TYPES = [0, 8, 9];
+const MAIN_GAME_TYPES = [
+  GameTypeEnum.MAIN_GAME,
+  GameTypeEnum.REMAKE,
+  GameTypeEnum.REMASTER,
+];
 
 export const searchIGDB = async (
   query: string,
@@ -48,12 +53,22 @@ export const searchIGDB = async (
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(
+        `HTTP error! status: ${response.status}, response: ${errorText}`
+      );
     }
 
     const data = (await response.json()) as IGDBGameResponse[];
     return data.map(transformIGDBResponse);
   } catch (error) {
+    logger.exception(error, {
+      context: "IGDB",
+      operation: "searchIGDB",
+      query,
+      showOnlyGames,
+      limit,
+    });
     logger.error("IGDB search error:", { error });
     return [];
   }
@@ -104,12 +119,21 @@ export const fetchIGDBByIds = async (
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(
+        `HTTP error! status: ${response.status}, response: ${errorText}`
+      );
     }
 
     const data = await response.json();
     return data as IGDBGameResponse[];
   } catch (error) {
+    logger.exception(error, {
+      context: "IGDB",
+      operation: "fetchIGDBByIds",
+      idsCount: ids?.length || 0,
+      showOnlyGames,
+    });
     logger.error("Error fetching games by IDs:", { error });
     return [];
   }

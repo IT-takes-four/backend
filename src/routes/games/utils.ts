@@ -6,6 +6,7 @@ export type GameWithRelations = Awaited<
       with: {
         platforms: { with: { platform: true } };
         genres: { with: { genre: true } };
+        types: { with: { type: true } };
         cover: true;
         screenshots: true;
         websites: true;
@@ -19,6 +20,7 @@ export const transformGameResponse = (game: GameWithRelations) => ({
   ...game,
   platforms: game?.platforms?.map((platform) => platform.platform) || [],
   genres: game?.genres?.map((genre) => genre.genre) || [],
+  types: game?.types?.map((type) => type.type) || [],
   cover: {
     id: game?.cover?.id,
     url: game?.cover?.url,

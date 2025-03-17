@@ -7,7 +7,8 @@ import { db } from "../../db";
 import { game, gameToSimilarGame } from "../../db/schema";
 import { enqueueGameWrite } from "./sqliteWriter";
 import { fetchIGDBByIds } from "../../routes/igdb/utils";
-import { createLogger } from "../logger";
+import { createLogger } from "../enhancedLogger";
+import { getCurrentTimestamp } from "../time";
 
 const SIMILAR_GAMES_QUEUE = "similar_games";
 const SIMILAR_GAMES_PENDING = "similar_games:pending";
@@ -115,8 +116,11 @@ export const enqueueSimilarGames = async (gameIds: number[]): Promise<void> => {
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     } catch (error) {
-      logger.error(`Error fetching batch of games:`, { error });
-      // Continue with next batch
+      logger.exception(error, {
+        context: "Similar games queue",
+        operation: "fetchIGDBByIds",
+        batch: batch.join(","),
+      });
     }
   }
 };
@@ -159,7 +163,11 @@ export const processSimilarGamesBatch = async (
         await redis.sadd(SIMILAR_GAMES_PENDING, gameId);
       }
     } catch (error) {
-      logger.error(`Error processing game ${gameId}:`, { error });
+      logger.exception(error, {
+        context: "Similar games queue",
+        operation: "processSimilarGame",
+        gameId,
+      });
       // Put back in pending set if failed
       await redis.sadd(SIMILAR_GAMES_PENDING, gameId);
     }
@@ -304,7 +312,7 @@ async function processSimilarGame(gameId: number): Promise<boolean> {
             .values({
               gameId,
               similarGameId,
-              createdAt: Math.floor(Date.now() / 1000),
+              createdAt: getCurrentTimestamp(),
             })
             .onConflictDoNothing();
 
@@ -314,7 +322,7 @@ async function processSimilarGame(gameId: number): Promise<boolean> {
             .values({
               gameId: similarGameId,
               similarGameId: gameId,
-              createdAt: Math.floor(Date.now() / 1000),
+              createdAt: getCurrentTimestamp(),
             })
             .onConflictDoNothing();
         }
@@ -325,9 +333,11 @@ async function processSimilarGame(gameId: number): Promise<boolean> {
           newRelationIds.length * 2
         } bidirectional relationships for game ${gameId}`
       );
-    } catch (error: any) {
-      logger.error(`Error creating relationships for game ${gameId}:`, {
-        error,
+    } catch (error) {
+      logger.exception(error, {
+        error: String(error),
+        gameId,
+        operation: "createRelationships",
       });
       return false; // Try again later
     }
@@ -347,7 +357,11 @@ async function processSimilarGame(gameId: number): Promise<boolean> {
 
     return true; // Mark as processed
   } catch (error) {
-    logger.error(`Unexpected error processing game ${gameId}:`, { error });
+    logger.exception(error, {
+      context: "Similar games queue",
+      operation: "processSimilarGame:internal",
+      gameId: gameId.toString(),
+    });
     return false; // Try again later
   }
 }
@@ -359,8 +373,8 @@ export const startSimilarGamesWorker = async (
   intervalMs: number = 60000,
   batchSize: number = 5
 ): Promise<NodeJS.Timer> => {
-  logger.info(
-    `Starting worker (interval: ${intervalMs}ms, batch size: ${batchSize})`
+  logger.system(
+    `Starting similar games worker (interval: ${intervalMs}ms, batch size: ${batchSize})`
   );
 
   // Initial run
@@ -371,7 +385,10 @@ export const startSimilarGamesWorker = async (
     try {
       await processSimilarGamesBatch(batchSize);
     } catch (error) {
-      logger.error(`Error in worker:`, { error });
+      logger.exception(error, {
+        context: "Similar games worker",
+        operation: "processSimilarGamesBatch",
+      });
     }
   }, intervalMs);
 
@@ -382,7 +399,7 @@ export const startSimilarGamesWorker = async (
  * Stop the background worker
  */
 export const stopSimilarGamesWorker = (intervalId: NodeJS.Timer): void => {
-  logger.info(`Stopping worker`);
+  logger.system(`Stopping similar games worker`);
   clearInterval(intervalId);
 };
 

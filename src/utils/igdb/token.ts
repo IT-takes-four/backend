@@ -1,7 +1,7 @@
 import axios from "axios";
 
 import { getRedisClient } from "../redis/redisClient";
-import { createLogger } from "../logger";
+import { createLogger } from "../enhancedLogger";
 
 const logger = createLogger("igdb-token");
 
@@ -10,17 +10,25 @@ const TOKEN_TTL = 24 * 60 * 60; // 24 hours
 const TOKEN_CACHE_KEY = "igdb:access_token";
 
 export const getIGDBToken = async (): Promise<string> => {
-  const redis = getRedisClient();
+  try {
+    const redis = getRedisClient();
 
-  const cachedToken = await redis.get(TOKEN_CACHE_KEY);
-  if (cachedToken) {
-    return cachedToken;
+    const cachedToken = await redis.get(TOKEN_CACHE_KEY);
+    if (cachedToken) {
+      return cachedToken;
+    }
+
+    const token = await requestNewToken();
+    await redis.setex(TOKEN_CACHE_KEY, TOKEN_TTL, token);
+
+    return token;
+  } catch (error) {
+    logger.exception(error, {
+      context: "IGDB",
+      operation: "getIGDBToken",
+    });
+    throw error;
   }
-
-  const token = await requestNewToken();
-  await redis.setex(TOKEN_CACHE_KEY, TOKEN_TTL, token);
-
-  return token;
 };
 
 const requestNewToken = async (): Promise<string> => {
@@ -28,7 +36,16 @@ const requestNewToken = async (): Promise<string> => {
   const clientSecret = process.env.TWITCH_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    throw new Error("Missing Twitch API credentials");
+    const error = new Error("Missing Twitch API credentials");
+    logger.exception(error, {
+      context: "IGDB",
+      operation: "requestNewToken",
+      missingCredentials: {
+        clientId: !clientId,
+        clientSecret: !clientSecret,
+      },
+    });
+    throw error;
   }
 
   try {
@@ -47,8 +64,11 @@ const requestNewToken = async (): Promise<string> => {
 
     return `Bearer ${response.data.access_token}`;
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Failed to get IGDB access token:", { error: errorMessage });
+    logger.exception(error, {
+      context: "IGDB",
+      operation: "requestNewToken",
+    });
+
     throw new Error("Failed to get IGDB access token");
   }
 };

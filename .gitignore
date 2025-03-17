@@ -46,3 +46,9 @@ package-lock.json
 # SQLite database files
 *.db-shm
 *.db-wal
+
+# logs
+logs/*
+*.log
+*.log.*
+*.log.*.*

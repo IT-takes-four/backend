@@ -5,60 +5,92 @@ import {
   real,
   sqliteTable,
   text,
+  index,
 } from "drizzle-orm/sqlite-core";
 
-// Reference tables from IGDB
+import { getCurrentTimestamp } from "../../utils/time";
+
+export enum GameTypeEnum {
+  MAIN_GAME = 0,
+  DLC = 1,
+  EXPANSION = 2,
+  BUNDLE = 3,
+  STANDALONE_EXPANSION = 4,
+  MOD = 5,
+  EPISODE = 6,
+  SEASON = 7,
+  REMAKE = 8,
+  REMASTER = 9,
+  EXPANDED_GAME = 10,
+  PORT = 11,
+  FORK = 12,
+  PACK = 13,
+  UPDATE = 14,
+}
+
 export const platform = sqliteTable("platform", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
-  slug: text("slug").notNull(),
+  slug: text("slug").notNull().unique(),
 });
+
+export const platformIndex = index("idx_platform_slug").on(platform.slug);
 
 export const genre = sqliteTable("genre", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
-  slug: text("slug").notNull(),
+  slug: text("slug").notNull().unique(),
 });
+
+export const genreIndex = index("idx_genre_slug").on(genre.slug);
 
 export const gameMode = sqliteTable("game_mode", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
-  slug: text("slug").notNull(),
+  slug: text("slug").notNull().unique(),
 });
+
+export const gameModeIndex = index("idx_game_mode_slug").on(gameMode.slug);
 
 export const type = sqliteTable("type", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  type: text("type").notNull(),
+  type: text("type").notNull().unique(),
 });
+
+export const typeIndex = index("idx_type_type").on(type.type);
 
 export const websiteType = sqliteTable("website_type", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  type: text("type").notNull(),
+  type: text("type").notNull().unique(),
 });
 
-// Main game table
+export const websiteTypeIndex = index("idx_website_type_type").on(
+  websiteType.type
+);
+
 export const game = sqliteTable("game", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
-  slug: text("slug").notNull(),
+  slug: text("slug").notNull().unique(),
   summary: text("summary"),
   storyline: text("storyline"),
   firstReleaseDate: integer("first_release_date"),
-  createdAt: integer("created_at")
-    .notNull()
-    .default(Math.floor(Date.now() / 1000)),
+  createdAt: integer("created_at").notNull().default(getCurrentTimestamp()),
   totalRating: real("total_rating"),
   involvedCompanies: text("involved_companies"),
   keywords: text("keywords"),
-  updatedAt: integer("updated_at")
-    .notNull()
-    .default(Math.floor(Date.now() / 1000)),
+  updatedAt: integer("updated_at").notNull().default(getCurrentTimestamp()),
   isPopular: integer("is_popular", { mode: "boolean" })
     .notNull()
     .default(false),
 });
 
-// Covers table (one-to-one with games)
+export const gameNameIndex = index("idx_game_name").on(game.name);
+export const gameSlugIndex = index("idx_game_slug").on(game.slug);
+export const gamePopularIndex = index("idx_game_popular").on(game.isPopular);
+export const gameRatingIndex = index("idx_game_rating").on(game.totalRating);
+
+// Cover table (one-to-one with games)
 export const cover = sqliteTable("cover", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   gameId: integer("game_id")
@@ -70,7 +102,9 @@ export const cover = sqliteTable("cover", {
   height: integer("height"),
 });
 
-// Screenshots table (many-to-one with games)
+export const coverGameIdIndex = index("idx_cover_game_id").on(cover.gameId);
+
+// Screenshot table (many-to-one with games)
 export const screenshot = sqliteTable("screenshot", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   gameId: integer("game_id")
@@ -81,7 +115,11 @@ export const screenshot = sqliteTable("screenshot", {
   height: integer("height"),
 });
 
-// Websites table (many-to-one with games)
+export const screenshotGameIdIndex = index("idx_screenshot_game_id").on(
+  screenshot.gameId
+);
+
+// Website table (many-to-one with games)
 export const website = sqliteTable("website", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   gameId: integer("game_id")
@@ -92,7 +130,14 @@ export const website = sqliteTable("website", {
   typeId: integer("type_id").references(() => websiteType.id),
 });
 
-// Many-to-many relations
+export const websiteGameIdIndex = index("idx_website_game_id").on(
+  website.gameId
+);
+export const websiteTypeIdIndex = index("idx_website_type_id").on(
+  website.typeId
+);
+
+// Similar game table (many-to-many with games)
 export const gameToSimilarGame = sqliteTable(
   "game_to_similar_game",
   {
@@ -102,14 +147,19 @@ export const gameToSimilarGame = sqliteTable(
     similarGameId: integer("similar_game_id")
       .notNull()
       .references(() => game.id, { onDelete: "cascade" }),
-    createdAt: integer("created_at")
-      .notNull()
-      .default(Math.floor(Date.now() / 1000)),
+    createdAt: integer("created_at").notNull().default(getCurrentTimestamp()),
   },
   (table) => [primaryKey({ columns: [table.gameId, table.similarGameId] })]
 );
 
-// Many-to-many relations
+export const gameToSimilarGameGameIdIndex = index("idx_g2sg_game_id").on(
+  gameToSimilarGame.gameId
+);
+export const gameToSimilarGameSimilarGameIdIndex = index(
+  "idx_g2sg_similar_game_id"
+).on(gameToSimilarGame.similarGameId);
+
+// Game to platform table (many-to-many with games)
 export const gameToPlatform = sqliteTable(
   "game_to_platform",
   {
@@ -121,6 +171,13 @@ export const gameToPlatform = sqliteTable(
       .references(() => platform.id, { onDelete: "cascade" }),
   },
   (table) => [primaryKey({ columns: [table.gameId, table.platformId] })]
+);
+
+export const gameToPlatformGameIdIndex = index("idx_g2p_game_id").on(
+  gameToPlatform.gameId
+);
+export const gameToPlatformPlatformIdIndex = index("idx_g2p_platform_id").on(
+  gameToPlatform.platformId
 );
 
 export const gameToGenre = sqliteTable(
@@ -136,6 +193,13 @@ export const gameToGenre = sqliteTable(
   (table) => [primaryKey({ columns: [table.gameId, table.genreId] })]
 );
 
+export const gameToGenreGameIdIndex = index("idx_g2g_game_id").on(
+  gameToGenre.gameId
+);
+export const gameToGenreGenreIdIndex = index("idx_g2g_genre_id").on(
+  gameToGenre.genreId
+);
+
 export const gameToGameMode = sqliteTable(
   "game_to_game_mode",
   {
@@ -147,6 +211,13 @@ export const gameToGameMode = sqliteTable(
       .references(() => gameMode.id, { onDelete: "cascade" }),
   },
   (table) => [primaryKey({ columns: [table.gameId, table.gameModeId] })]
+);
+
+export const gameToGameModeGameIdIndex = index("idx_g2gm_game_id").on(
+  gameToGameMode.gameId
+);
+export const gameToGameModeGameModeIdIndex = index("idx_g2gm_game_mode_id").on(
+  gameToGameMode.gameModeId
 );
 
 export const gameToType = sqliteTable(
@@ -162,7 +233,13 @@ export const gameToType = sqliteTable(
   (table) => [primaryKey({ columns: [table.gameId, table.typeId] })]
 );
 
-// Relations
+export const gameToTypeGameIdIndex = index("idx_g2t_game_id").on(
+  gameToType.gameId
+);
+export const gameToTypeTypeIdIndex = index("idx_g2t_type_id").on(
+  gameToType.typeId
+);
+
 export const gameRelations = relations(game, ({ many, one }) => ({
   platforms: many(gameToPlatform, { relationName: "game_platforms" }),
   genres: many(gameToGenre, { relationName: "game_genres" }),

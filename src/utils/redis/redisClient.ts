@@ -1,6 +1,6 @@
 import { Redis } from "ioredis";
 
-import { createLogger } from "../logger";
+import { createLogger } from "../enhancedLogger";
 
 const logger = createLogger("redis-client");
 
@@ -25,11 +25,16 @@ const createRedisClient = () => {
   });
 
   client.on("error", (err: Error) => {
-    logger.error("Redis Client Error:", { error: err });
+    logger.exception(err, {
+      context: "Redis client",
+      operation: "connection",
+      host: redisHost,
+      port: redisPort,
+    });
   });
 
   client.on("connect", () => {
-    logger.info("Redis Client Connected");
+    logger.system("Redis client Connected");
   });
 
   return client;
@@ -39,7 +44,17 @@ let redisClient: Redis | null = null;
 
 export const getRedisClient = () => {
   if (!redisClient) {
-    redisClient = createRedisClient();
+    try {
+      redisClient = createRedisClient();
+    } catch (error) {
+      logger.exception(error, {
+        context: "Redis client",
+        operation: "createClient",
+        host: redisHost,
+        port: redisPort,
+      });
+      throw error; // Re-throw to let the application handle it
+    }
   }
   return redisClient;
 };

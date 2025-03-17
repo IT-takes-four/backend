@@ -16,15 +16,28 @@ import { gamesRouter } from "./routes/games";
 import { igdbRouter } from "./routes/igdb";
 import { startWorkerInBackground } from "./utils/redis/sqliteWriter";
 import { startSimilarGamesWorker } from "./utils/redis/similarGamesQueue";
-import logger, { LogLevel } from "./utils/logger";
+import logger, {
+  LogLevel,
+  initSentry,
+  isSentryEnabled,
+  flushSentry,
+} from "./utils/enhancedLogger";
 
 const logLevel = (process.env.LOG_LEVEL || "info") as LogLevel;
+
 logger.level = logLevel;
 logger.info(`Starting Quokka API with log level: ${logLevel}`);
 
+const sentryEnabled = initSentry();
+if (sentryEnabled) {
+  logger.system("Sentry error tracking enabled");
+} else {
+  logger.system("Sentry error tracking disabled");
+}
+
 startWorkerInBackground();
 
-const app = new Elysia()
+const app = new Elysia({ name: "quokka-api" })
   .use(cors())
   .use(
     swagger({
@@ -47,11 +60,26 @@ const app = new Elysia()
       secret: process.env.JWT_SECRET || "supersecret",
     })
   )
-  .get("/", () => "Quokka API is running!")
+  .onError(({ code, error, set }) => {
+    logger.exception(error, { code });
+
+    if (code === "NOT_FOUND") {
+      set.status = 404;
+      return {
+        error: "Not Found",
+        message: error instanceof Error ? error.message : "Resource not found",
+      };
+    }
+
+    set.status = 500;
+    return {
+      error: "Internal Server Error",
+      message: "An unexpected error occurred",
+    };
+  })
   .use(gamesRouter)
   .use(igdbRouter)
-
-  // Platforms endpoints
+  .get("/", () => "Quokka API is running!")
   .get("/platforms", async () => {
     return await db.select().from(platform);
   })
@@ -114,20 +142,31 @@ const app = new Elysia()
       .from(websiteType)
       .where(eq(websiteType.id, parseInt(id)))
       .limit(1);
-  })
-
-  .listen(3000, () => {
-    console.log(`🦊 Elysia is running at http://localhost:3000`);
-    logger.info(`🦊 Elysia is running at http://localhost:3000`);
-
-    // Start the similar games background worker
-    startSimilarGamesWorker(60000, 5)
-      .then((workerId) => {
-        console.log(`Similar games worker started with ID: ${workerId}`);
-        logger.info(`Similar games worker started with ID: ${workerId}`);
-      })
-      .catch((error) => {
-        console.error("Failed to start similar games worker:", error);
-        logger.error("Failed to start similar games worker:", { error });
-      });
   });
+
+app.listen(3000, () => {
+  logger.system(
+    `🦘 Quokka API is running at ${app.server?.hostname}:${app.server?.port}`
+  );
+
+  startSimilarGamesWorker(60000, 25)
+    .then((workerId) => {
+      logger.system(`Similar games worker started with ID: ${workerId}`);
+    })
+    .catch((error) => {
+      logger.exception(error, { source: "similar-games-worker" });
+    });
+});
+
+const shutdown = async () => {
+  logger.system("Application shutting down...");
+
+  if (isSentryEnabled()) {
+    await flushSentry();
+  }
+
+  process.exit(0);
+};
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);

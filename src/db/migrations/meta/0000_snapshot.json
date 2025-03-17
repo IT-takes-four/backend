@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "f2f32786-3fea-41c5-9e1e-a4989afff754",
+  "id": "f62fb725-04c7-4fef-9885-4a6d347bcb1b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "cover": {
@@ -122,7 +122,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": 1742172303
+          "default": 1742216933
         },
         "total_rating": {
           "name": "total_rating",
@@ -151,7 +151,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": 1742172303
+          "default": 1742216933
         },
         "is_popular": {
           "name": "is_popular",
@@ -162,7 +162,15 @@
           "default": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "game_slug_unique": {
+          "name": "game_slug_unique",
+          "columns": [
+            "slug"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -193,7 +201,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "game_mode_slug_unique": {
+          "name": "game_mode_slug_unique",
+          "columns": [
+            "slug"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -399,7 +415,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": 1742172303
+          "default": 1742216933
         }
       },
       "indexes": {},
@@ -527,7 +543,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "genre_slug_unique": {
+          "name": "genre_slug_unique",
+          "columns": [
+            "slug"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -558,7 +582,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "platform_slug_unique": {
+          "name": "platform_slug_unique",
+          "columns": [
+            "slug"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -641,7 +673,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "type_type_unique": {
+          "name": "type_type_unique",
+          "columns": [
+            "type"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -737,7 +777,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "website_type_type_unique": {
+          "name": "website_type_type_unique",
+          "columns": [
+            "type"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},

@@ -20,6 +20,11 @@ export const getAllGames = new Elysia().get("/", async () => {
           genre: true,
         },
       },
+      types: {
+        with: {
+          type: true,
+        },
+      },
       similarGames: {
         with: {
           similarGame: true,

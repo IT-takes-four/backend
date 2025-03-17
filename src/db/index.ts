@@ -4,7 +4,7 @@ import * as schema from "./schema";
 
 const dbPath = process.env.SQLITE_DATABASE_URL || "games.db";
 const sqlite = new Database(dbPath);
-sqlite.run("PRAGMA foreign_keys = ON"); // Critical for your foreign key constraints
+sqlite.run("PRAGMA foreign_keys = ON"); // Critical for foreign key constraints
 sqlite.run("PRAGMA journal_mode = WAL"); // Better concurrency for read/write operations
 sqlite.run("PRAGMA synchronous = NORMAL"); // Good balance of safety and speed
 

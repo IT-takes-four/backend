@@ -23,6 +23,11 @@ export const getGameById = new Elysia().get("/:id", async ({ params }) => {
           genre: true,
         },
       },
+      types: {
+        with: {
+          type: true,
+        },
+      },
       similarGames: {
         with: {
           similarGame: true,
