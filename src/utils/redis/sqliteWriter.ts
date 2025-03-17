@@ -1,9 +1,11 @@
+import { eq } from "drizzle-orm";
+
 import { db } from "../../db";
 import { RedisQueue, QueueJob } from "./redisQueue";
 import { getRedisClient } from "./redisClient";
 import { IGDBGameResponse } from "../../routes/igdb/types";
-import { transformIGDBResponse } from "../../routes/igdb/utils";
-import { eq } from "drizzle-orm";
+import { transformIGDBResponse } from "../../routes/igdb/transformers";
+
 import {
   game,
   cover,
@@ -12,11 +14,11 @@ import {
   gameToPlatform,
   gameToGenre,
   gameToGameMode,
-  gameToSimilarGame,
   platform,
   genre,
   gameMode,
 } from "../../db/schema";
+import { storeSimilarGameRelationship } from "./similarGamesQueue";
 
 const sqliteWriteQueue = new RedisQueue("sqlite_write");
 
@@ -236,28 +238,11 @@ const insertGame = async (gameData: any) => {
     });
 
     // Handle similar games relationships in a separate transaction
-    // This avoids having too many operations in a single transaction
     if (gameData.similar_games && gameData.similar_games.length > 0) {
-      await db.transaction(async (tx) => {
-        // Insert similar games relationships in batches
-        const BATCH_SIZE = 50;
-        for (let i = 0; i < gameData.similar_games.length; i += BATCH_SIZE) {
-          const batch = gameData.similar_games.slice(i, i + BATCH_SIZE);
-
-          for (const similarGameId of batch) {
-            await tx
-              .insert(gameToSimilarGame)
-              .values({
-                gameId: gameData.id,
-                similarGameId,
-                createdAt: Math.floor(Date.now() / 1000),
-              })
-              .onConflictDoNothing();
-          }
-        }
-      });
+      // Store similar game relationships in Redis for background processing
+      await storeSimilarGameRelationship(gameData.id, gameData.similar_games);
       console.log(
-        `Added ${gameData.similar_games.length} similar game relationships for ${gameData.name}`
+        `Queued ${gameData.similar_games.length} similar game relationships for ${gameData.name}`
       );
     }
 
@@ -452,24 +437,20 @@ const insertGamesBatch = async (games: any[], searchId: string) => {
     for (const gameData of newGames) {
       if (gameData.similar_games && gameData.similar_games.length > 0) {
         try {
-          await db.transaction(async (tx) => {
-            for (const similarGameId of gameData.similar_games) {
-              await tx
-                .insert(gameToSimilarGame)
-                .values({
-                  gameId: gameData.id,
-                  similarGameId,
-                  createdAt: Math.floor(Date.now() / 1000),
-                })
-                .onConflictDoNothing();
-            }
-          });
+          // Store similar game relationships in Redis for background processing
+          await storeSimilarGameRelationship(
+            gameData.id,
+            gameData.similar_games
+          );
+          console.log(
+            `Queued ${gameData.similar_games.length} similar game relationships for ${gameData.name}`
+          );
         } catch (error) {
           console.error(
-            `Error adding similar games for ${gameData.name}:`,
+            `Error queueing similar games for ${gameData.name}:`,
             error
           );
-          // Continue with other games even if this one fails
+          // Continue with other games
         }
       }
     }

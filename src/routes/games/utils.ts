@@ -9,6 +9,7 @@ export type GameWithRelations = Awaited<
         cover: true;
         screenshots: true;
         websites: true;
+        similarGames?: { with: { similarGame: true } };
       };
     }>
   >
@@ -31,4 +32,8 @@ export const transformGameResponse = (game: GameWithRelations) => ({
     height: screenshot.height,
   })),
   websites: game?.websites?.map((website) => website) || [],
+  similarGames:
+    game?.similarGames?.map((relation) => ({
+      id: relation.similarGameId,
+    })) || [],
 });

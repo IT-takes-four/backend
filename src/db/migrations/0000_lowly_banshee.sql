@@ -15,11 +15,11 @@ CREATE TABLE `game` (
 	`summary` text,
 	`storyline` text,
 	`first_release_date` integer,
-	`created_at` integer DEFAULT 1742166049 NOT NULL,
+	`created_at` integer DEFAULT 1742172303 NOT NULL,
 	`total_rating` real,
 	`involved_companies` text,
 	`keywords` text,
-	`updated_at` integer DEFAULT 1742166049 NOT NULL,
+	`updated_at` integer DEFAULT 1742172303 NOT NULL,
 	`is_popular` integer DEFAULT false NOT NULL
 );
 --> statement-breakpoint
@@ -56,10 +56,10 @@ CREATE TABLE `game_to_platform` (
 CREATE TABLE `game_to_similar_game` (
 	`game_id` integer NOT NULL,
 	`similar_game_id` integer NOT NULL,
-	`created_at` integer DEFAULT 1742166049 NOT NULL,
+	`created_at` integer DEFAULT 1742172303 NOT NULL,
 	PRIMARY KEY(`game_id`, `similar_game_id`),
-	FOREIGN KEY (`game_id`) REFERENCES `game`(`id`) ON UPDATE no action ON DELETE no action,
-	FOREIGN KEY (`similar_game_id`) REFERENCES `game`(`id`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`game_id`) REFERENCES `game`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`similar_game_id`) REFERENCES `game`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `game_to_type` (

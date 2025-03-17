@@ -4,7 +4,7 @@ import { eq, like } from "drizzle-orm";
 import { db, game } from "../../db";
 import { getRedisClient } from "../../utils/redis/redisClient";
 import { transformGameResponse } from "./utils";
-import { searchIGDB } from "../igdb/getAll";
+import { searchIGDB } from "../igdb/utils";
 import { enqueueGamesBatchWrite } from "../../utils/redis/sqliteWriter";
 import { enqueueSimilarGames } from "../../utils/redis/similarGamesQueue";
 
@@ -15,6 +15,7 @@ const GAME_DATA_TTL = 604800; // 7 days
 
 export const searchGames = new Elysia().get("/search", async ({ query }) => {
   const searchQuery = query?.q as string;
+  const limit = query?.limit ? parseInt(query.limit) : 50;
 
   if (!searchQuery || searchQuery.trim().length === 0) {
     return {
@@ -108,7 +109,7 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
         desc(games.isPopular),
         desc(games.totalRating),
       ],
-      limit: 20,
+      limit,
       with: {
         cover: true,
         screenshots: true,
@@ -121,6 +122,11 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
         genres: {
           with: {
             genre: true,
+          },
+        },
+        similarGames: {
+          with: {
+            similarGame: true,
           },
         },
       },
@@ -164,7 +170,7 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
     // If not found in SQLite, query IGDB
     console.log(`Searching IGDB for "${normalizedQuery}"`);
     const igdbStartTime = Date.now();
-    const igdbResults = await searchIGDB(normalizedQuery);
+    const igdbResults = await searchIGDB(normalizedQuery, true, limit);
     const igdbQueryTime = Date.now() - igdbStartTime;
 
     if (igdbResults.length > 0) {
@@ -202,7 +208,6 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
       };
     }
 
-    // No results found
     return {
       results: [],
       meta: {

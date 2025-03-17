@@ -1,12 +1,9 @@
 import { Elysia } from "elysia";
 
 import { db } from "../../db";
-// import { getIGDBToken } from "../../utils/igdb/token";
 import { transformGameResponse } from "./utils";
 
 export const getAllGames = new Elysia().get("/", async () => {
-  //   const token = await getIGDBToken();
-  //   console.log({ token });
   const games = await db.query.game.findMany({
     limit: 100,
     with: {
@@ -21,6 +18,11 @@ export const getAllGames = new Elysia().get("/", async () => {
       genres: {
         with: {
           genre: true,
+        },
+      },
+      similarGames: {
+        with: {
+          similarGame: true,
         },
       },
     },

@@ -98,10 +98,10 @@ export const gameToSimilarGame = sqliteTable(
   {
     gameId: integer("game_id")
       .notNull()
-      .references(() => game.id),
+      .references(() => game.id, { onDelete: "cascade" }),
     similarGameId: integer("similar_game_id")
       .notNull()
-      .references(() => game.id),
+      .references(() => game.id, { onDelete: "cascade" }),
     createdAt: integer("created_at")
       .notNull()
       .default(Math.floor(Date.now() / 1000)),
@@ -164,13 +164,14 @@ export const gameToType = sqliteTable(
 
 // Relations
 export const gameRelations = relations(game, ({ many, one }) => ({
+  platforms: many(gameToPlatform, { relationName: "game_platforms" }),
+  genres: many(gameToGenre, { relationName: "game_genres" }),
+  gameModes: many(gameToGameMode, { relationName: "game_modes" }),
+  types: many(gameToType, { relationName: "game_types" }),
+  similarGames: many(gameToSimilarGame, { relationName: "similar_games" }),
   cover: one(cover),
   screenshots: many(screenshot),
   websites: many(website),
-  platforms: many(gameToPlatform, { relationName: "game_platforms" }),
-  genres: many(gameToGenre, { relationName: "game_genres" }),
-  modes: many(gameToGameMode, { relationName: "game_modes" }),
-  types: many(gameToType, { relationName: "game_types" }),
 }));
 
 export const coverRelations = relations(cover, ({ one }) => ({
@@ -269,3 +270,19 @@ export const gameToTypeRelations = relations(gameToType, ({ one }) => ({
     relationName: "type_games",
   }),
 }));
+
+export const gameToSimilarGameRelations = relations(
+  gameToSimilarGame,
+  ({ one }) => ({
+    game: one(game, {
+      fields: [gameToSimilarGame.gameId],
+      references: [game.id],
+      relationName: "similar_games",
+    }),
+    similarGame: one(game, {
+      fields: [gameToSimilarGame.similarGameId],
+      references: [game.id],
+      relationName: "games_similar_to",
+    }),
+  })
+);
