@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "f62fb725-04c7-4fef-9885-4a6d347bcb1b",
+  "id": "8d64bf45-bd06-4b46-91da-eea616448a5b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "cover": {
@@ -21,12 +21,20 @@
           "notNull": true,
           "autoincrement": false
         },
-        "url": {
-          "name": "url",
+        "hash": {
+          "name": "hash",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'igdb'"
         },
         "width": {
           "name": "width",
@@ -122,7 +130,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": 1742216933
+          "default": 1742250244
         },
         "total_rating": {
           "name": "total_rating",
@@ -151,7 +159,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": 1742216933
+          "default": 1742250244
         },
         "is_popular": {
           "name": "is_popular",
@@ -415,7 +423,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": 1742216933
+          "default": 1742250244
         }
       },
       "indexes": {},
@@ -613,12 +621,20 @@
           "notNull": true,
           "autoincrement": false
         },
-        "url": {
-          "name": "url",
+        "hash": {
+          "name": "hash",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'igdb'"
         },
         "width": {
           "name": "width",

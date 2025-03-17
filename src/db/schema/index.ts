@@ -28,6 +28,11 @@ export enum GameTypeEnum {
   UPDATE = 14,
 }
 
+export enum ImageSourceEnum {
+  IGDB = "igdb",
+  LOCAL = "local",
+}
+
 export const platform = sqliteTable("platform", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
@@ -97,7 +102,10 @@ export const cover = sqliteTable("cover", {
     .notNull()
     .unique()
     .references(() => game.id, { onDelete: "cascade" }),
-  url: text("url").notNull(),
+  hash: text("hash").notNull(),
+  source: text("source", { enum: ["igdb", "local"] })
+    .notNull()
+    .default(ImageSourceEnum.IGDB),
   width: integer("width"),
   height: integer("height"),
 });
@@ -110,7 +118,10 @@ export const screenshot = sqliteTable("screenshot", {
   gameId: integer("game_id")
     .notNull()
     .references(() => game.id, { onDelete: "cascade" }),
-  url: text("url").notNull(),
+  hash: text("hash").notNull(),
+  source: text("source", { enum: ["igdb", "local"] })
+    .notNull()
+    .default(ImageSourceEnum.IGDB),
   width: integer("width"),
   height: integer("height"),
 });

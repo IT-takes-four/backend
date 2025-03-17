@@ -33,7 +33,8 @@ export const searchIGDB = async (
       search "${query}";
       fields id, name, slug, created_at, genres.name, genres.slug, 
              platforms.name, platforms.slug, first_release_date, keywords.name,
-             cover.url, cover.width, cover.height, screenshots.url, screenshots.width, screenshots.height,
+             cover.image_id, cover.width, cover.height, 
+             screenshots.image_id, screenshots.width, screenshots.height,
              websites.type.id, websites.type.type, websites.url, websites.trusted, 
              game_modes.name, game_modes.slug, total_rating, similar_games, storyline, summary,
              involved_companies.company.name, involved_companies.company.slug,
@@ -98,7 +99,8 @@ export const fetchIGDBByIds = async (
     let bodyQuery = `
       fields id, name, slug, created_at, genres.name, genres.slug, 
              platforms.name, platforms.slug, first_release_date, keywords.name,
-             cover.url, cover.width, cover.height, screenshots.url, screenshots.width, screenshots.height,
+             cover.image_id, cover.width, cover.height, 
+             screenshots.image_id, screenshots.width, screenshots.height,
              websites.type.id, websites.type.type, websites.url, websites.trusted, 
              game_modes.name, game_modes.slug, total_rating, similar_games, storyline, summary,
              involved_companies.company.name, involved_companies.company.slug,

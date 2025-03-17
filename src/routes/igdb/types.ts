@@ -17,13 +17,13 @@ export interface IGDBGameResponse {
   url?: string;
   cover?: {
     id: number;
-    url: string;
+    image_id: string;
     width?: number;
     height?: number;
   };
   screenshots?: Array<{
     id: number;
-    url: string;
+    image_id: string;
     width?: number;
     height?: number;
   }>;

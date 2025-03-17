@@ -1,7 +1,8 @@
 CREATE TABLE `cover` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`game_id` integer NOT NULL,
-	`url` text NOT NULL,
+	`hash` text NOT NULL,
+	`source` text DEFAULT 'igdb' NOT NULL,
 	`width` integer,
 	`height` integer,
 	FOREIGN KEY (`game_id`) REFERENCES `game`(`id`) ON UPDATE no action ON DELETE cascade
@@ -15,11 +16,11 @@ CREATE TABLE `game` (
 	`summary` text,
 	`storyline` text,
 	`first_release_date` integer,
-	`created_at` integer DEFAULT 1742216933 NOT NULL,
+	`created_at` integer DEFAULT 1742250244 NOT NULL,
 	`total_rating` real,
 	`involved_companies` text,
 	`keywords` text,
-	`updated_at` integer DEFAULT 1742216933 NOT NULL,
+	`updated_at` integer DEFAULT 1742250244 NOT NULL,
 	`is_popular` integer DEFAULT false NOT NULL
 );
 --> statement-breakpoint
@@ -58,7 +59,7 @@ CREATE TABLE `game_to_platform` (
 CREATE TABLE `game_to_similar_game` (
 	`game_id` integer NOT NULL,
 	`similar_game_id` integer NOT NULL,
-	`created_at` integer DEFAULT 1742216933 NOT NULL,
+	`created_at` integer DEFAULT 1742250244 NOT NULL,
 	PRIMARY KEY(`game_id`, `similar_game_id`),
 	FOREIGN KEY (`game_id`) REFERENCES `game`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`similar_game_id`) REFERENCES `game`(`id`) ON UPDATE no action ON DELETE cascade
@@ -89,7 +90,8 @@ CREATE UNIQUE INDEX `platform_slug_unique` ON `platform` (`slug`);--> statement-
 CREATE TABLE `screenshot` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`game_id` integer NOT NULL,
-	`url` text NOT NULL,
+	`hash` text NOT NULL,
+	`source` text DEFAULT 'igdb' NOT NULL,
 	`width` integer,
 	`height` integer,
 	FOREIGN KEY (`game_id`) REFERENCES `game`(`id`) ON UPDATE no action ON DELETE cascade

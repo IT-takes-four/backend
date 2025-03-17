@@ -1,4 +1,5 @@
 import { db } from "../../db";
+import { getImageUrl, IgdbImageSize } from "../../utils/image";
 
 export type GameWithRelations = Awaited<
   ReturnType<
@@ -23,13 +24,21 @@ export const transformGameResponse = (game: GameWithRelations) => ({
   types: game?.types?.map((type) => type.type) || [],
   cover: {
     id: game?.cover?.id,
-    url: game?.cover?.url,
+    url: game?.cover?.hash
+      ? getImageUrl(game.cover.source, game.cover.hash, IgdbImageSize.COVER_BIG)
+      : null,
     width: game?.cover?.width,
     height: game?.cover?.height,
   },
   screenshots: game?.screenshots?.map((screenshot) => ({
     id: screenshot.id,
-    url: screenshot.url,
+    url: screenshot.hash
+      ? getImageUrl(
+          screenshot.source,
+          screenshot.hash,
+          IgdbImageSize.SCREENSHOT_BIG
+        )
+      : null,
     width: screenshot.width,
     height: screenshot.height,
   })),

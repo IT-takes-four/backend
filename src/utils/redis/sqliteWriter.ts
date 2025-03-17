@@ -21,6 +21,9 @@ import {
   gameMode,
   type,
   gameToType,
+  gameToSimilarGame,
+  websiteType,
+  ImageSourceEnum,
 } from "../../db/schema";
 import { storeSimilarGameRelationship } from "./similarGamesQueue";
 
@@ -118,7 +121,8 @@ const insertGame = async (gameData: any) => {
       if (gameData.cover) {
         await tx.insert(cover).values({
           gameId: gameData.id,
-          url: gameData.cover.url,
+          hash: gameData.cover.hash,
+          source: ImageSourceEnum.IGDB,
           width: gameData.cover.width,
           height: gameData.cover.height,
         });
@@ -130,7 +134,8 @@ const insertGame = async (gameData: any) => {
         for (const screenshotData of gameData.screenshots) {
           await tx.insert(screenshot).values({
             gameId: gameData.id,
-            url: screenshotData.url,
+            hash: screenshotData.hash,
+            source: ImageSourceEnum.IGDB,
             width: screenshotData.width,
             height: screenshotData.height,
           });
@@ -352,7 +357,8 @@ const insertGamesBatch = async (games: any[], searchId: string) => {
         if (gameData.cover) {
           await tx.insert(cover).values({
             gameId: gameData.id,
-            url: gameData.cover.url,
+            hash: gameData.cover.hash,
+            source: ImageSourceEnum.IGDB,
             width: gameData.cover.width,
             height: gameData.cover.height,
           });
@@ -364,7 +370,8 @@ const insertGamesBatch = async (games: any[], searchId: string) => {
           for (const screenshotData of gameData.screenshots) {
             await tx.insert(screenshot).values({
               gameId: gameData.id,
-              url: screenshotData.url,
+              hash: screenshotData.hash,
+              source: ImageSourceEnum.IGDB,
               width: screenshotData.width,
               height: screenshotData.height,
             });
@@ -604,7 +611,8 @@ const updateGame = async (gameData: any) => {
           await tx
             .update(cover)
             .set({
-              url: gameData.cover.url,
+              hash: gameData.cover.hash,
+              source: ImageSourceEnum.IGDB,
               width: gameData.cover.width,
               height: gameData.cover.height,
             })
@@ -612,7 +620,8 @@ const updateGame = async (gameData: any) => {
         } else {
           await tx.insert(cover).values({
             gameId: gameData.id,
-            url: gameData.cover.url,
+            hash: gameData.cover.hash,
+            source: ImageSourceEnum.IGDB,
             width: gameData.cover.width,
             height: gameData.cover.height,
           });
@@ -632,7 +641,8 @@ const updateGame = async (gameData: any) => {
           for (const screenshotData of gameData.screenshots) {
             await tx.insert(screenshot).values({
               gameId: gameData.id,
-              url: screenshotData.url,
+              hash: screenshotData.hash,
+              source: ImageSourceEnum.IGDB,
               width: screenshotData.width,
               height: screenshotData.height,
             });
