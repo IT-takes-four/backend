@@ -170,6 +170,80 @@ npm run docker:push
 docker push username/quokka-api:latest
 ```
 
+## Using the Docker Image
+
+### From GitHub Container Registry
+
+The application is available as a Docker image from GitHub Container Registry:
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/OWNER/quokka-api:latest
+
+# Run the container
+docker run -p 3000:3000 ghcr.io/OWNER/quokka-api:latest
+```
+
+Replace `OWNER` with your GitHub username or organization.
+
+You can also specify a specific version tag instead of `latest`.
+
+### Using Docker Compose with the GitHub Container Registry image
+
+```yaml
+version: "3"
+services:
+  api:
+    image: ghcr.io/OWNER/quokka-api:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./data:/app/data
+```
+
+## Database Management
+
+### Migrations and Seeding
+
+The application is configured to handle your SQLite database intelligently:
+
+```bash
+# Normal startup (runs migrations, doesn't seed unless database is new)
+docker-compose up -d
+
+# Run with explicit seeding (even if database already exists)
+RUN_SEED=true docker-compose up -d
+
+# Run without migrations (if you want to skip them)
+RUN_MIGRATIONS=false docker-compose up -d
+```
+
+When you pull updates from the GitHub Container Registry, your database will be preserved because:
+
+1. The database file is stored in a volume outside the container
+2. Migrations run automatically but don't destroy existing data
+3. Seeding automatically runs on a fresh database or when explicitly requested via the RUN_SEED environment variable
+
+### Environment Variables for Database Control
+
+You can control database behavior with these environment variables:
+
+- `RUN_MIGRATIONS=true|false` - Control whether migrations run at startup (default: true)
+- `RUN_SEED=true|false` - Control whether seeding runs on existing databases (default: false, but always runs on new databases)
+
+Example using the GitHub Container Registry image:
+
+```bash
+# Pull and run with automatic migrations (default)
+# Note: Will automatically seed if the database doesn't exist yet
+docker run -p 3000:3000 -v ./data:/app/data ghcr.io/username/quokka-api:latest
+
+# Pull and run with explicit seeding (even on existing databases)
+docker run -p 3000:3000 -v ./data:/app/data -e RUN_SEED=true ghcr.io/username/quokka-api:latest
+```
+
 ## Deployment
 
 After pushing your Docker image to a container registry, you can deploy it to various platforms:

@@ -1,3 +1,4 @@
+---
 services:
   api:
     build:
@@ -9,11 +10,16 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - SQLITE_DATABASE_URL=./games.db
-      - REDIS_URL=redis://redis:6379
       - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
       - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
-      - LOG_LEVEL=${LOG_LEVEL}
+
+      - SQLITE_DATABASE_URL=./data/games.db
+      - RUN_MIGRATIONS=${RUN_MIGRATIONS:-true}
+      - RUN_SEED=${RUN_SEED:-false}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+
+      - LOG_LEVEL=${LOG_LEVEL:-error}
+      - SENTRY_DSN=${SENTRY_DSN:-}
     volumes:
       - sqlite-data:/app/data
     restart: unless-stopped
@@ -50,21 +56,6 @@ services:
     networks:
       - quokka-network
 
-  # Separate service for seeding the database (run manually when needed)
-  seed:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: quokka-api-seed
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=./data/games.db
-    volumes:
-      - sqlite-data:/app/data
-    command: sh -c "bun run db:seed"
-    profiles:
-      - seed
-
 volumes:
   sqlite-data:
     name: quokka-sqlite-data
@@ -72,8 +63,6 @@ volumes:
     name: quokka-postgres-data
   redis-data:
     name: quokka-redis-data
-  node_modules:
-    name: quokka-node-modules
  
 networks:
   quokka-network:

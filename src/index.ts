@@ -23,10 +23,36 @@ import logger, {
   flushSentry,
 } from "./utils/enhancedLogger";
 
+const validateEnvironment = () => {
+  const missingVars = [];
+
+  if (!process.env.REDIS_URL) {
+    missingVars.push("REDIS_URL");
+  }
+
+  if (!process.env.SQLITE_DATABASE_URL && !process.env.DATABASE_URL) {
+    missingVars.push("SQLITE_DATABASE_URL or DATABASE_URL");
+  }
+
+  if (missingVars.length > 0) {
+    logger.error(
+      `Missing required environment variables: ${missingVars.join(", ")}`
+    );
+    logger.system(
+      "Application startup aborted: Configure the missing environment variables and restart"
+    );
+    process.exit(1);
+  }
+
+  return true;
+};
+
 const logLevel = (process.env.LOG_LEVEL || "info") as LogLevel;
 
 logger.level = logLevel;
 logger.info(`Starting Quokka API with log level: ${logLevel}`);
+
+validateEnvironment();
 
 const sentryEnabled = initSentry();
 if (sentryEnabled) {
@@ -60,10 +86,15 @@ const app = new Elysia({ name: "quokka-api" })
       secret: process.env.JWT_SECRET || "supersecret",
     })
   )
-  .onError(({ code, error, set }) => {
+  .onError(({ code, error, set, path }) => {
     logger.exception(error, { code });
 
     if (code === "NOT_FOUND") {
+      if (path === "/favicon.ico") {
+        set.status = 204;
+        return null;
+      }
+
       set.status = 404;
       return {
         error: "Not Found",

@@ -15,29 +15,19 @@ COPY src/ src/
 # Create database directory
 RUN mkdir -p data
 
-# Copy database file if it exists
-COPY games.db ./data/games.db
-
 # Set environment variables
 ENV PORT=3000
 ENV NODE_ENV=production
-ENV DATABASE_URL=./data/games.db
+ENV SQLITE_DATABASE_URL=./games.db
+ENV RUN_MIGRATIONS=true
+ENV RUN_SEED=false
 
 # Expose the port
 EXPOSE 3000
 
-# Create a script to check if the database exists and run migrations if needed
-RUN echo '#!/bin/sh\n\
-    if [ -s /app/data/games.db ]; then\n\
-    echo "Database already exists, skipping migrations"\n\
-    else\n\
-    echo "Running migrations..."\n\
-    bun run db:migrate\n\
-    fi\n\
-    \n\
-    echo "Starting application..."\n\
-    bun run src/index.ts\n\
-    ' > /app/start.sh && chmod +x /app/start.sh
+# Copy the entrypoint script
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
-# Set up the database and start the application
-CMD ["/app/start.sh"] 
+# Set the entrypoint
+ENTRYPOINT ["/app/entrypoint.sh"] 
