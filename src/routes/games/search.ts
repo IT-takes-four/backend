@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { like } from "drizzle-orm";
+import { like, sql } from "drizzle-orm";
 
 import { db, game } from "../../db";
 import { getRedisClient } from "../../utils/redis/redisClient";
@@ -15,6 +15,57 @@ const logger = createLogger("games-search");
 const SEARCH_LOCK_TTL = 10; // 10 seconds
 const SEARCH_RESULTS_TTL = 86400; // 24 hours
 const GAME_DATA_TTL = 604800; // 7 days
+
+/**
+ * Fetch games from the database with full relations
+ */
+async function fetchGamesFromDB(
+  whereClause: any,
+  limit: number,
+  offset: number
+) {
+  return db.query.game.findMany({
+    where: whereClause,
+    orderBy: (games, { desc }) => [
+      desc(games.isPopular),
+      desc(games.totalRating),
+    ],
+    limit,
+    offset,
+    with: {
+      cover: true,
+      screenshots: true,
+      websites: true,
+      platforms: {
+        with: {
+          platform: true,
+        },
+      },
+      genres: {
+        with: {
+          genre: true,
+        },
+      },
+      types: {
+        with: {
+          type: true,
+        },
+      },
+      similarGames: {
+        with: {
+          similarGame: true,
+        },
+      },
+    },
+  });
+}
+
+// Helper function for the notInArray condition
+function notInArray(column: any, values: number[]) {
+  return values.length > 0
+    ? sql`${column} NOT IN (${values.join(",")})`
+    : sql`1=1`; // No-op condition when values array is empty
+}
 
 export const searchGames = new Elysia().get("/search", async ({ query }) => {
   const searchQuery = query?.q as string;
@@ -109,40 +160,40 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
     logger.info(`Searching SQLite for "${normalizedQuery}"`);
     const startTime = Date.now();
 
-    const dbGames = await db.query.game.findMany({
-      where: like(game.name, `%${normalizedQuery}%`),
-      orderBy: (games, { desc }) => [
-        desc(games.isPopular),
-        desc(games.totalRating),
-      ],
+    // Create a version of the query with special characters removed for more inclusive matching
+    const cleanedQuery = searchQuery.trim().replace(/[^\w\s]/gi, "");
+    const exactQuery = searchQuery.trim();
+
+    // First try to find exact matches (case insensitive)
+    let dbGames = await fetchGamesFromDB(
+      like(game.name, `%${exactQuery}%`),
       limit,
-      offset,
-      with: {
-        cover: true,
-        screenshots: true,
-        websites: true,
-        platforms: {
-          with: {
-            platform: true,
-          },
-        },
-        genres: {
-          with: {
-            genre: true,
-          },
-        },
-        types: {
-          with: {
-            type: true,
-          },
-        },
-        similarGames: {
-          with: {
-            similarGame: true,
-          },
-        },
-      },
-    });
+      offset
+    );
+
+    // If we don't have enough results and the cleaned query is different,
+    // supplement with results using the cleaned query
+    if (dbGames.length < limit && cleanedQuery !== exactQuery) {
+      const remainingLimit = limit - dbGames.length;
+      const remainingOffset = Math.max(0, offset - dbGames.length);
+
+      // Get the IDs of already found games to exclude them
+      const existingIds = dbGames.map((game) => game.id);
+
+      const whereClause = sql`${like(
+        game.name,
+        `%${cleanedQuery}%`
+      )} AND ${notInArray(game.id, existingIds)}`;
+
+      const additionalGames = await fetchGamesFromDB(
+        whereClause,
+        remainingLimit,
+        remainingOffset
+      );
+
+      // Combine the results
+      dbGames = [...dbGames, ...additionalGames];
+    }
 
     const queryTime = Date.now() - startTime;
 
@@ -186,7 +237,16 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
     // If not found in SQLite, query IGDB
     logger.info(`Searching IGDB for "${normalizedQuery}"`);
     const igdbStartTime = Date.now();
-    const igdbResults = await searchIGDB(normalizedQuery, true, limit);
+
+    // For IGDB, try first with the original query
+    let igdbResults = await searchIGDB(searchQuery.trim(), true, limit);
+
+    // If no results and the query has special characters, try with cleaned version
+    if (igdbResults.length === 0 && cleanedQuery !== searchQuery.trim()) {
+      logger.info(`No results found, trying cleaned query: "${cleanedQuery}"`);
+      igdbResults = await searchIGDB(cleanedQuery, true, limit);
+    }
+
     const igdbQueryTime = Date.now() - igdbStartTime;
 
     if (igdbResults.length > 0) {

@@ -61,6 +61,14 @@ GET /games/search?q=SEARCH_TERM
 - `offset` (optional): Number of results to skip for pagination (default: 0)
 - `fresh` (optional): Set to "true" or "1" to bypass cache and get fresh results
 
+##### Search Behavior
+
+- Searches are case-insensitive
+- Exact matches (including special characters) are prioritized in results
+- If insufficient exact matches are found, the search automatically expands to include results without special characters
+- For example, searching for "Pandemonium!" will first show exact matches, then other "Pandemonium" games
+- This provides both precision for exact searches and more inclusive results when needed
+
 ##### Caching Behavior
 
 - Results are cached for 24 hours
