@@ -19,6 +19,8 @@ const GAME_DATA_TTL = 604800; // 7 days
 export const searchGames = new Elysia().get("/search", async ({ query }) => {
   const searchQuery = query?.q as string;
   const limit = query?.limit ? parseInt(query.limit) : 50;
+  const offset = query?.offset ? parseInt(query.offset) : 0;
+  const forceFresh = query?.fresh === "true" || query?.fresh === "1";
 
   if (!searchQuery || searchQuery.trim().length === 0) {
     return {
@@ -34,19 +36,18 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const redis = getRedisClient();
   const searchId = `search:${normalizedQuery}:${getCurrentTimestamp()}`;
-  const searchLockKey = `search_processing:${normalizedQuery}`;
-  const searchCacheKey = `search:${normalizedQuery}`;
+  const searchLockKey = `search_processing:${normalizedQuery}:${limit}:${offset}`;
+  const searchCacheKey = `search:${normalizedQuery}:${limit}:${offset}`;
 
   // Check if there's an active search for this query
   const lockExists = await redis.get(searchLockKey);
 
-  if (lockExists) {
-    // This is a duplicate request, subscribe to results
+  if (lockExists && !forceFresh) {
     logger.info(
       `Duplicate search for "${normalizedQuery}", waiting for results`
     );
 
-    // Check if results are already in cache
+    const cacheStartTime = Date.now();
     const cachedResults = await redis.get(searchCacheKey);
     if (cachedResults) {
       const parsedResults = JSON.parse(cachedResults);
@@ -56,14 +57,14 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
           total: parsedResults.results.length,
           source: "cache",
           freshness: "fresh",
-          query_time_ms: 0,
+          query_time_ms: Date.now() - cacheStartTime,
           deduplicated: true,
         },
       };
     }
 
-    // Wait a short time and check again (simplified approach)
     await new Promise((resolve) => setTimeout(resolve, 1000));
+    const waitStartTime = Date.now();
     const resultsAfterWait = await redis.get(searchCacheKey);
 
     if (resultsAfterWait) {
@@ -74,35 +75,37 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
           total: parsedResults.results.length,
           source: "cache",
           freshness: "fresh",
-          query_time_ms: 1000,
+          query_time_ms: Date.now() - waitStartTime + 1000,
           deduplicated: true,
         },
       };
     }
-
-    // If still no results, proceed with a new search
   }
 
-  // Create a lock for this search
   await redis.set(searchLockKey, "1", "EX", SEARCH_LOCK_TTL);
 
   try {
-    // Check if we have cached results
-    const cachedResults = await redis.get(searchCacheKey);
-    if (cachedResults) {
-      const parsedResults = JSON.parse(cachedResults);
-      return {
-        results: parsedResults.results,
-        meta: {
-          total: parsedResults.results.length,
-          source: "cache",
-          freshness: "fresh",
-          query_time_ms: 0,
-        },
-      };
+    if (!forceFresh) {
+      const cacheCheckStartTime = Date.now();
+      const cachedResults = await redis.get(searchCacheKey);
+      if (cachedResults) {
+        const parsedResults = JSON.parse(cachedResults);
+        return {
+          results: parsedResults.results,
+          meta: {
+            total: parsedResults.results.length,
+            source: "cache",
+            freshness: "fresh",
+            query_time_ms: Date.now() - cacheCheckStartTime,
+          },
+        };
+      }
+    } else {
+      logger.info(
+        `Fresh results requested for "${normalizedQuery}", bypassing cache`
+      );
     }
 
-    // Check SQLite for results
     logger.info(`Searching SQLite for "${normalizedQuery}"`);
     const startTime = Date.now();
 
@@ -113,6 +116,7 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
         desc(games.totalRating),
       ],
       limit,
+      offset,
       with: {
         cover: true,
         screenshots: true,
@@ -198,7 +202,6 @@ export const searchGames = new Elysia().get("/search", async ({ query }) => {
       await enqueueGamesBatchWrite(igdbResults, searchId);
       logger.info(`Enqueued ${igdbResults.length} games for writing to SQLite`);
 
-      // Extract game IDs from results
       const igdbGameIds = igdbResults
         .map((game) => game.id)
         .filter((id): id is number => id !== undefined);

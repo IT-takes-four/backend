@@ -44,6 +44,49 @@ npm run db:studio
 
 - `GET /games` - Get all games
 - `GET /games/:id` - Get a specific game with its cover, screenshots, and websites
+- `GET /games/search` - Search for games by name with caching support
+
+#### Search Endpoint
+
+The search endpoint provides a powerful way to find games with caching and pagination:
+
+```
+GET /games/search?q=SEARCH_TERM
+```
+
+##### Parameters
+
+- `q` (required): The search term to look for in game names
+- `limit` (optional): Maximum number of results to return (default: 50)
+- `offset` (optional): Number of results to skip for pagination (default: 0)
+- `fresh` (optional): Set to "true" or "1" to bypass cache and get fresh results
+
+##### Caching Behavior
+
+- Results are cached for 24 hours
+- Each unique combination of search term, limit, and offset has its own cache entry
+- Concurrent identical searches are deduplicated to reduce external API calls
+
+##### Example Requests
+
+Basic search:
+
+```
+GET /games/search?q=Zelda
+```
+
+Pagination:
+
+```
+GET /games/search?q=Mario&limit=10&offset=0  // First 10 results
+GET /games/search?q=Mario&limit=10&offset=10 // Next 10 results
+```
+
+Force fresh results (bypass cache):
+
+```
+GET /games/search?q=Pokemon&fresh=true
+```
 
 #### Platforms
 
