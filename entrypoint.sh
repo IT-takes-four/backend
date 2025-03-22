@@ -27,7 +27,7 @@ fi
 if [ "$RUN_MIGRATIONS" = "true" ]; then
   echo "Running migrations..."
   # Run migrations and ensure it completes successfully
-  if ! bun run db:migrate; then
+  if ! bun run db:sqlite:migrate; then
     echo "Migration failed!"
     exit 1
   fi
@@ -40,7 +40,7 @@ fi
 if [ "$RUN_SEED" = "true" ] || [ "$DB_JUST_CREATED" = "true" ]; then
   echo "Running seed..."
   # Run seed and ensure it completes successfully
-  if ! bun run db:seed; then
+  if ! bun run db:sqlite:seed; then
     echo "Seeding failed!"
     exit 1
   fi
