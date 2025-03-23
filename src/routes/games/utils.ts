@@ -1,5 +1,5 @@
-import { db } from "../../db";
-import { getImageUrl, IgdbImageSize } from "../../utils/image";
+import { db } from "@/db/sqlite";
+import { getImageUrl, IgdbImageSize } from "@/utils/image";
 
 export type GameWithRelations = Awaited<
   ReturnType<

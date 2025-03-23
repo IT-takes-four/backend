@@ -1,8 +1,9 @@
-import { getIGDBToken } from "../../utils/igdb/token";
+import { createLogger } from "@/utils/enhancedLogger";
+import { GameTypeEnum } from "@/db/sqlite/schema";
+import { getIGDBToken } from "@/utils/igdb/token";
+
 import { transformIGDBResponse } from "./transformers";
 import type { IGDBGameResponse } from "./types";
-import { createLogger } from "../../utils/enhancedLogger";
-import { GameTypeEnum } from "../../db/schema";
 
 const logger = createLogger("igdb");
 

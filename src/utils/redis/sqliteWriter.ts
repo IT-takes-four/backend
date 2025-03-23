@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 
-import { db } from "../../db";
+import { db } from "../../../db/sqlite";
 import { RedisQueue, QueueJob } from "./redisQueue";
 import { getRedisClient } from "./redisClient";
 import { IGDBGameResponse } from "../../routes/igdb/types";
@@ -24,7 +24,7 @@ import {
   gameToSimilarGame,
   websiteType,
   ImageSourceEnum,
-} from "../../db/schema";
+} from "../../../db/sqlite/schema";
 import { storeSimilarGameRelationship } from "./similarGamesQueue";
 
 const logger = createLogger("sqlite-writer");

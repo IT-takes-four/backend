@@ -1,4 +1,4 @@
-import { ImageSourceEnum } from "../db/schema";
+import { ImageSourceEnum } from "@/db/sqlite/schema";
 
 export enum IgdbImageSize {
   COVER_SMALL = "cover_small", // 90x128

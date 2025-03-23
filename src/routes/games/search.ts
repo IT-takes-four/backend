@@ -1,14 +1,14 @@
 import { Elysia } from "elysia";
 import { like, sql } from "drizzle-orm";
 
-import { db, game } from "../../db";
-import { getRedisClient } from "../../utils/redis/redisClient";
+import { db, game } from "@/db/sqlite";
+import { getRedisClient } from "@/utils/redis/redisClient";
 import { transformGameResponse } from "./utils";
-import { searchIGDB } from "../igdb/utils";
-import { enqueueGamesBatchWrite } from "../../utils/redis/sqliteWriter";
-import { enqueueSimilarGames } from "../../utils/redis/similarGamesQueue";
-import { createLogger } from "../../utils/enhancedLogger";
-import { getCurrentTimestamp } from "../../utils/time";
+import { searchIGDB } from "@/routes/igdb/utils";
+import { enqueueGamesBatchWrite } from "@/utils/redis/sqliteWriter";
+import { enqueueSimilarGames } from "@/utils/redis/similarGamesQueue";
+import { createLogger } from "@/utils/enhancedLogger";
+import { getCurrentTimestamp } from "@/utils/time";
 
 const logger = createLogger("games-search");
 

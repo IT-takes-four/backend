@@ -2,26 +2,19 @@ import { Elysia } from "elysia";
 import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import { jwt } from "@elysiajs/jwt";
-import { eq } from "drizzle-orm";
 
-import {
-  db,
-  platform,
-  genre,
-  gameMode,
-  type as gameType,
-  websiteType,
-} from "./db";
-import { gamesRouter } from "./routes/games";
-import { igdbRouter } from "./routes/igdb";
-import { startWorkerInBackground } from "./utils/redis/sqliteWriter";
-import { startSimilarGamesWorker } from "./utils/redis/similarGamesQueue";
+import { gamesRouter } from "@/routes/games";
+import { igdbRouter } from "@/routes/igdb";
+import { authRouter } from "@/routes/auth";
+
+import { startWorkerInBackground } from "@/utils/redis/sqliteWriter";
+import { startSimilarGamesWorker } from "@/utils/redis/similarGamesQueue";
 import logger, {
   LogLevel,
   initSentry,
   isSentryEnabled,
   flushSentry,
-} from "./utils/enhancedLogger";
+} from "@/utils/enhancedLogger";
 
 const validateEnvironment = () => {
   const missingVars = [];
@@ -63,8 +56,17 @@ if (sentryEnabled) {
 
 startWorkerInBackground();
 
+// export const app = new Elysia({ name: "quokka-api" }).use(authMiddleware);
+
 const app = new Elysia({ name: "quokka-api" })
-  .use(cors())
+  .use(
+    cors({
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      credentials: true,
+      allowedHeaders: ["Content-Type", "Authorization"],
+    })
+  )
   .use(
     swagger({
       documentation: {
@@ -76,6 +78,7 @@ const app = new Elysia({ name: "quokka-api" })
         tags: [
           { name: "games", description: "Game related endpoints" },
           { name: "igdb", description: "IGDB integration endpoints" },
+          { name: "auth", description: "Authentication endpoints" },
         ],
       },
     })
@@ -102,82 +105,37 @@ const app = new Elysia({ name: "quokka-api" })
       };
     }
 
+    if (code === 401) {
+      set.status = 401;
+      return {
+        error: "Unauthorized",
+        message:
+          error instanceof Error ? error.message : "Authentication required",
+      };
+    }
+
     set.status = 500;
     return {
       error: "Internal Server Error",
       message: "An unexpected error occurred",
     };
   })
-  .use(gamesRouter)
-  .use(igdbRouter)
-  .get("/", () => "Quokka API is running!")
-  .get("/platforms", async () => {
-    return await db.select().from(platform);
-  })
-  .get("/platforms/:id", async ({ params }) => {
-    const { id } = params;
-    return await db
-      .select()
-      .from(platform)
-      .where(eq(platform.id, parseInt(id)))
-      .limit(1);
-  })
+  .group("/api", (app) =>
+    app
+      .get("/", () => "Quokka API is running!")
+      .use(gamesRouter)
+      .use(igdbRouter)
+      .use(authRouter)
+  );
 
-  // Genres endpoints
-  .get("/genres", async () => {
-    return await db.select().from(genre);
-  })
-  .get("/genres/:id", async ({ params }) => {
-    const { id } = params;
-    return await db
-      .select()
-      .from(genre)
-      .where(eq(genre.id, parseInt(id)))
-      .limit(1);
-  })
+const PORT = process.env.PORT || 3000;
 
-  // Game modes endpoints
-  .get("/game-modes", async () => {
-    return await db.select().from(gameMode);
-  })
-  .get("/game-modes/:id", async ({ params }) => {
-    const { id } = params;
-    return await db
-      .select()
-      .from(gameMode)
-      .where(eq(gameMode.id, parseInt(id)))
-      .limit(1);
-  })
-
-  // Game types endpoints
-  .get("/types", async () => {
-    return await db.select().from(gameType);
-  })
-  .get("/types/:id", async ({ params }) => {
-    const { id } = params;
-    return await db
-      .select()
-      .from(gameType)
-      .where(eq(gameType.id, parseInt(id)))
-      .limit(1);
-  })
-
-  // Website types endpoints
-  .get("/website-types", async () => {
-    return await db.select().from(websiteType);
-  })
-  .get("/website-types/:id", async ({ params }) => {
-    const { id } = params;
-    return await db
-      .select()
-      .from(websiteType)
-      .where(eq(websiteType.id, parseInt(id)))
-      .limit(1);
-  });
-
-app.listen(3000, () => {
+app.listen(PORT, () => {
   logger.system(
-    `🦘 Quokka API is running at ${app.server?.hostname}:${app.server?.port}`
+    `🚀 Server is running at ${app.server?.hostname}:${app.server?.port}`
+  );
+  logger.system(
+    `📚 Swagger documentation available at ${app.server?.hostname}:${app.server?.port}/swagger`
   );
 
   startSimilarGamesWorker(60000, 25)
