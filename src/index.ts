@@ -5,7 +5,7 @@ import { jwt } from "@elysiajs/jwt";
 
 import { gamesRouter } from "@/routes/games";
 import { igdbRouter } from "@/routes/igdb";
-import { authRouter } from "@/routes/auth";
+import { webhooksRouter } from "@/routes/webhooks";
 
 import { startWorkerInBackground } from "@/utils/redis/sqliteWriter";
 import { startSimilarGamesWorker } from "@/utils/redis/similarGamesQueue";
@@ -56,8 +56,6 @@ if (sentryEnabled) {
 
 startWorkerInBackground();
 
-// export const app = new Elysia({ name: "quokka-api" }).use(authMiddleware);
-
 const app = new Elysia({ name: "quokka-api" })
   .use(
     cors({
@@ -78,7 +76,7 @@ const app = new Elysia({ name: "quokka-api" })
         tags: [
           { name: "games", description: "Game related endpoints" },
           { name: "igdb", description: "IGDB integration endpoints" },
-          { name: "auth", description: "Authentication endpoints" },
+          { name: "webhooks", description: "Webhook endpoints" },
         ],
       },
     })
@@ -125,7 +123,7 @@ const app = new Elysia({ name: "quokka-api" })
       .get("/", () => "Quokka API is running!")
       .use(gamesRouter)
       .use(igdbRouter)
-      .use(authRouter)
+      .use(webhooksRouter)
   );
 
 const PORT = process.env.PORT || 3030;

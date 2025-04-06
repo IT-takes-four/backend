@@ -5,3 +5,6 @@ export const dateToTimestamp = (date: Date): number =>
 
 export const timestampToDate = (timestamp: number): Date =>
   new Date(timestamp * 1000);
+
+export const millisecondToDate = (timestamp: number): Date =>
+  new Date(timestamp);

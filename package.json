@@ -18,7 +18,6 @@
     "docker:db:backup": "docker cp quokka-api:/app/data/games.db ./games.db.backup",
     "docker:db:restore": "docker cp ./games.db.backup quokka-api:/app/data/games.db",
     "db:pg:generate": "bun drizzle-kit generate --config=drizzle.postgres.config.ts",
-    "db:pg:generate:authschema": "bunx @better-auth/cli@latest generate --config ./src/utils/auth.ts --output ./db/postgres/schema/index.ts --y",
     "db:pg:migrate": "bun drizzle-kit migrate --config=drizzle.postgres.config.ts",
     "db:pg:studio": "bun drizzle-kit studio --config=drizzle.postgres.config.ts",
     "db:sqlite:generate": "bun drizzle-kit generate --config=drizzle.sqlite.config.ts",
@@ -38,6 +37,7 @@
     "elysia": "1.2.25",
     "ioredis": "^5.6.0",
     "pg": "^8.14.1",
+    "svix": "^1.63.1",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0"
   },
