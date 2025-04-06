@@ -4,10 +4,10 @@ services:
     image: oven/bun:latest
     container_name: quokka-api-dev
     ports:
-      - "3000:3000"
+      - "3030:3030"
     environment:
       - NODE_ENV=development
-      - PORT=3000
+      - PORT=3030
       - SQLITE_DATABASE_URL=./games.db
       - REDIS_URL=redis://redis:6379
       - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
@@ -15,6 +15,9 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - SENTRY_DSN=${SENTRY_DSN}
       - POSTGRES_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+      - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      - CLERK_WEBHOOK_SECRET=${CLERK_WEBHOOK_SECRET}
     volumes:
       - ./:/app
       - ./games.db:/app/games.db
@@ -64,7 +67,7 @@ volumes:
     name: quokka-redis-data-dev
   node_modules:
     name: quokka-node-modules-dev
- 
+
 networks:
   quokka-network:
-    driver: bridge 
+    driver: bridge

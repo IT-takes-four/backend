@@ -6,10 +6,10 @@ services:
       dockerfile: Dockerfile
     container_name: quokka-api
     ports:
-      - "3000:3000"
+      - "3030:3030"
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=3030
       - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
       - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
 
@@ -64,7 +64,7 @@ volumes:
     name: quokka-postgres-data
   redis-data:
     name: quokka-redis-data
- 
+
 networks:
   quokka-network:
     driver: bridge

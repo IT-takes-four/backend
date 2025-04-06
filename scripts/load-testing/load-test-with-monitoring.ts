@@ -3,7 +3,7 @@ import { Redis } from "ioredis";
 import { Database } from "bun:sqlite";
 
 // Configuration
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "http://localhost:3030";
 const REQUESTS_PER_SECOND = parseInt(process.env.LOAD_TEST_RPS || "10000");
 const TEST_DURATION_SECONDS = parseInt(process.env.LOAD_TEST_DURATION || "20");
 const CONCURRENT_BATCHES = 100; // Number of concurrent batches to send

@@ -6,7 +6,7 @@
     "dev": "bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
     "docker:build": "docker build -t quokka-api .",
-    "docker:run": "docker run -p 3000:3000 quokka-api",
+    "docker:run": "docker run -p 3030:3030 quokka-api",
     "docker:push": "docker push quokka-api",
     "docker:compose": "docker-compose up",
     "docker:compose:build": "docker-compose up --build",
@@ -27,11 +27,12 @@
     "db:sqlite:seed": "bun run src/db/seed.ts"
   },
   "dependencies": {
+    "@clerk/backend": "^1.26.0",
     "@elysiajs/cors": "^1.2.0",
     "@elysiajs/jwt": "^1.2.0",
     "@elysiajs/swagger": "^1.2.2",
-    "@libsql/client": "^0.15.0",
-    "@sentry/bun": "^9.8.0",
+    "@libsql/client": "^0.15.2",
+    "@sentry/bun": "^9.11.0",
     "axios": "^1.8.4",
     "drizzle-orm": "^0.41.0",
     "elysia": "1.2.25",
@@ -41,7 +42,7 @@
     "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
-    "bun-types": "1.2.5",
-    "drizzle-kit": "^0.30.5"
+    "bun-types": "1.2.8",
+    "drizzle-kit": "^0.30.6"
   }
 }

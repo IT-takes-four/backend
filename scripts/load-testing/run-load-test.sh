@@ -45,9 +45,9 @@ done
 
 # Make sure the server is running
 echo "Checking if the server is running..."
-curl -s http://localhost:3000 > /dev/null
+curl -s http://localhost:3030 > /dev/null
 if [ $? -ne 0 ]; then
-  echo "Server is not running at http://localhost:3000"
+  echo "Server is not running at http://localhost:3030"
   echo "Please start the server first"
   exit 1
 fi

@@ -16,7 +16,7 @@ To start the development server run:
 bun run dev
 ```
 
-Open http://localhost:3000/ with your browser to see the result.
+Open http://localhost:3030/ with your browser to see the result.
 
 ## Database
 
@@ -166,7 +166,7 @@ docker build -t quokka-api .
 ```bash
 npm run docker:run
 # or directly with Docker
-docker run -p 3000:3000 quokka-api
+docker run -p 3030:3030 quokka-api
 ```
 
 ### Using Docker Compose
@@ -232,7 +232,7 @@ The application is available as a Docker image from GitHub Container Registry:
 docker pull ghcr.io/OWNER/quokka-api:latest
 
 # Run the container
-docker run -p 3000:3000 ghcr.io/OWNER/quokka-api:latest
+docker run -p 3030:3030 ghcr.io/OWNER/quokka-api:latest
 ```
 
 Replace `OWNER` with your GitHub username or organization.
@@ -247,7 +247,7 @@ services:
   api:
     image: ghcr.io/OWNER/quokka-api:latest
     ports:
-      - "3000:3000"
+      - "3030:3030"
     environment:
       - NODE_ENV=production
     volumes:
@@ -289,10 +289,10 @@ Example using the GitHub Container Registry image:
 ```bash
 # Pull and run with automatic migrations (default)
 # Note: Will automatically seed if the database doesn't exist yet
-docker run -p 3000:3000 -v ./data:/app/data ghcr.io/username/quokka-api:latest
+docker run -p 3030:3030 -v ./data:/app/data ghcr.io/username/quokka-api:latest
 
 # Pull and run with explicit seeding (even on existing databases)
-docker run -p 3000:3000 -v ./data:/app/data -e RUN_SEED=true ghcr.io/username/quokka-api:latest
+docker run -p 3030:3030 -v ./data:/app/data -e RUN_SEED=true ghcr.io/username/quokka-api:latest
 ```
 
 ## Deployment
