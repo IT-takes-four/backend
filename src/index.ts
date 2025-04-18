@@ -1,11 +1,10 @@
-import { Elysia } from "elysia";
+import { Context, Elysia } from "elysia";
 import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import { jwt } from "@elysiajs/jwt";
-
 import { gamesRouter } from "@/routes/games";
 import { igdbRouter } from "@/routes/igdb";
-import { webhooksRouter } from "@/routes/webhooks";
+import { userRouter } from "@/routes/user";
 
 import { startWorkerInBackground } from "@/utils/redis/sqliteWriter";
 import { startSimilarGamesWorker } from "@/utils/redis/similarGamesQueue";
@@ -15,6 +14,8 @@ import logger, {
   isSentryEnabled,
   flushSentry,
 } from "@/utils/enhancedLogger";
+import { auth } from "./lib/auth";
+import { mergeSwaggerSchemas } from "@/utils/swaggerMerger";
 
 const validateEnvironment = () => {
   const missingVars = [];
@@ -56,93 +57,107 @@ if (sentryEnabled) {
 
 startWorkerInBackground();
 
-const app = new Elysia({ name: "quokka-api" })
-  .use(
-    cors({
-      origin: "*",
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      credentials: true,
-      allowedHeaders: ["Content-Type", "Authorization"],
-    })
-  )
-  .use(
-    swagger({
-      documentation: {
-        info: {
-          title: "Quokka API",
-          version: "1.0.0",
-          description: "API for the Quokka game tracking application",
-        },
-        tags: [
-          { name: "games", description: "Game related endpoints" },
-          { name: "igdb", description: "IGDB integration endpoints" },
-          { name: "webhooks", description: "Webhook endpoints" },
-        ],
-      },
-    })
-  )
-  .use(
-    jwt({
-      name: "jwt",
-      secret: process.env.JWT_SECRET || "supersecret",
-    })
-  )
-  .onError(({ code, error, set, path }) => {
-    logger.exception(error, { code });
+const betterAuthView = (context: Context) => {
+  const BETTER_AUTH_ACCEPT_METHODS = ["POST", "GET"];
+  if (BETTER_AUTH_ACCEPT_METHODS.includes(context.request.method)) {
+    return auth.handler(context.request);
+  } else {
+    context.error(405);
+  }
+};
 
-    if (code === "NOT_FOUND") {
-      if (path === "/favicon.ico") {
-        set.status = 204;
-        return null;
+const setupApp = async () => {
+  const mergedDocumentation = await mergeSwaggerSchemas();
+
+  const app = new Elysia({ name: "quokka-api" })
+    .use(
+      cors({
+        // origin: ["*", "http://localhost:3000", "http://localhost:5173"],
+        origin: "http://localhost:3000",
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        credentials: true,
+        allowedHeaders: ["Content-Type", "Authorization"],
+      })
+    )
+    .use(
+      swagger({
+        documentation: mergedDocumentation,
+      })
+    )
+    .use(
+      jwt({
+        name: "jwt",
+        secret: process.env.JWT_SECRET || "supersecret",
+      })
+    )
+    .onError(({ code, error, set, path }) => {
+      logger.exception(error, { code });
+
+      if (code === "NOT_FOUND") {
+        if (path === "/favicon.ico") {
+          set.status = 204;
+          return null;
+        }
+
+        set.status = 404;
+        return {
+          error: "Not Found",
+          message:
+            error instanceof Error ? error.message : "Resource not found",
+        };
       }
 
-      set.status = 404;
+      if (code === 401) {
+        set.status = 401;
+        return {
+          error: "Unauthorized",
+          message:
+            error instanceof Error ? error.message : "Authentication required",
+        };
+      }
+
+      set.status = 500;
       return {
-        error: "Not Found",
-        message: error instanceof Error ? error.message : "Resource not found",
+        error: "Internal Server Error",
+        message: "An unexpected error occurred",
       };
-    }
-
-    if (code === 401) {
-      set.status = 401;
-      return {
-        error: "Unauthorized",
-        message:
-          error instanceof Error ? error.message : "Authentication required",
-      };
-    }
-
-    set.status = 500;
-    return {
-      error: "Internal Server Error",
-      message: "An unexpected error occurred",
-    };
-  })
-  .group("/api", (app) =>
-    app
-      .get("/", () => "Quokka API is running!")
-      .use(gamesRouter)
-      .use(igdbRouter)
-      .use(webhooksRouter)
-  );
-
-const PORT = process.env.PORT || 3030;
-
-app.listen(PORT, () => {
-  logger.system(
-    `🚀 Server is running at ${app.server?.hostname}:${app.server?.port}`
-  );
-  logger.system(
-    `📚 Swagger documentation available at ${app.server?.hostname}:${app.server?.port}/swagger`
-  );
-
-  startSimilarGamesWorker(60000, 25)
-    .then((workerId) => {
-      logger.system(`Similar games worker started with ID: ${workerId}`);
     })
-    .catch((error) => {
-      logger.exception(error, { source: "similar-games-worker" });
-    });
+
+    .group("/api", (app) =>
+      app
+        .get("/", () => "Quokka API is running!")
+        .all("/auth/*", betterAuthView)
+        .use(gamesRouter)
+        .use(igdbRouter)
+        .use(userRouter)
+    );
+
+  const PORT = process.env.PORT || 3030;
+
+  app.listen(PORT, () => {
+    logger.system(
+      `🚀 Server is running at ${app.server?.hostname}:${app.server?.port}`
+    );
+    logger.system(
+      `📚 Swagger documentation available at ${app.server?.hostname}:${app.server?.port}/swagger`
+    );
+
+    startSimilarGamesWorker(60000, 25)
+      .then((workerId) => {
+        logger.system(`Similar games worker started with ID: ${workerId}`);
+      })
+      .catch((error) => {
+        logger.exception(error, { source: "similar-games-worker" });
+      });
+  });
+
+  return app;
+};
+
+// Execute the async setup
+setupApp().catch((error) => {
+  logger.exception(error, { source: "app-setup" });
+  process.exit(1);
 });
 
 const shutdown = async () => {
