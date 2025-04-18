@@ -18,6 +18,7 @@
     "docker:db:backup": "docker cp quokka-api:/app/data/games.db ./games.db.backup",
     "docker:db:restore": "docker cp ./games.db.backup quokka-api:/app/data/games.db",
     "db:pg:generate": "bun drizzle-kit generate --config=drizzle.postgres.config.ts",
+    "db:pg:generate:authschema": "bunx @better-auth/cli@latest generate --config ./src/lib/auth.ts --output ./db/postgres/schema.ts --y",
     "db:pg:migrate": "bun drizzle-kit migrate --config=drizzle.postgres.config.ts",
     "db:pg:studio": "bun drizzle-kit studio --config=drizzle.postgres.config.ts",
     "db:sqlite:generate": "bun drizzle-kit generate --config=drizzle.sqlite.config.ts",
@@ -26,23 +27,22 @@
     "db:sqlite:seed": "bun run src/db/seed.ts"
   },
   "dependencies": {
-    "@clerk/backend": "^1.26.0",
     "@elysiajs/cors": "^1.2.0",
     "@elysiajs/jwt": "^1.2.0",
     "@elysiajs/swagger": "^1.2.2",
-    "@libsql/client": "^0.15.2",
-    "@sentry/bun": "^9.11.0",
+    "@libsql/client": "^0.15.4",
+    "@sentry/bun": "^9.13.0",
     "axios": "^1.8.4",
-    "drizzle-orm": "^0.41.0",
+    "better-auth": "^1.2.7",
+    "drizzle-orm": "^0.42.0",
     "elysia": "1.2.25",
-    "ioredis": "^5.6.0",
+    "ioredis": "^5.6.1",
     "pg": "^8.14.1",
-    "svix": "^1.63.1",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
-    "bun-types": "1.2.8",
-    "drizzle-kit": "^0.30.6"
+    "bun-types": "1.2.10",
+    "drizzle-kit": "^0.31.0"
   }
 }
