@@ -16,9 +16,6 @@ const SEARCH_LOCK_TTL = 10; // 10 seconds
 const SEARCH_RESULTS_TTL = 86400; // 24 hours
 const GAME_DATA_TTL = 604800; // 7 days
 
-/**
- * Fetch games from the database with full relations
- */
 async function fetchGamesFromDB(
   whereClause: any,
   limit: number,
