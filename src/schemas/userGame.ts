@@ -10,7 +10,21 @@ const statusEnum = z.enum([
   "backlog",
 ]);
 
-export const UserGameInsertSchema = z.object({
+export const UserGamePatchResponseSchema = z.object({
+  message: z.literal("Game updated successfully"),
+  game: z.object({
+    userId: z.number(),
+    gameId: z.number(),
+    status: z.string(),
+    rating: z.string().nullable(),
+    review: z.string().nullable(),
+    platformId: z.number().nullable(),
+    source: z.string(),
+    addedAt: z.number().nullable(),
+  }),
+});
+
+export const UserGamePostSchema = z.object({
   gameId: z.number(),
   status: statusEnum,
   rating: z.number().min(0).max(10),

@@ -1,18 +1,18 @@
 import { Elysia, t } from "elysia";
-import { eq, and } from "drizzle-orm";
-import { z } from "zod";
+import { and, eq } from "drizzle-orm";
+import z from "zod";
 
 import { db } from "@/db/postgres";
 import { userGames } from "@/db/postgres/schema";
 import { betterAuth } from "@/lib/betterAuth";
 import { createLogger } from "@/utils/enhancedLogger";
 import {
+  BadRequestErrorResponseSchema,
   ConflictErrorResponseSchema,
   ForbiddenErrorResponseSchema,
   InternalServerErrorResponseSchema,
 } from "@/schemas/error";
-import { BadRequestErrorResponseSchema } from "@/schemas/error";
-import { UserGameInsertSchema } from "@/schemas/userGame";
+import { UserGamePostSchema } from "@/schemas/userGame";
 
 const logger = createLogger("user-add-game");
 
@@ -25,16 +25,11 @@ export const postUserGame = new Elysia().use(betterAuth).post(
         return { error: "You can only add games to your own library" };
       }
 
-      const parsed = UserGameInsertSchema.safeParse(body);
-      if (!parsed.success) {
-        set.status = 400;
-        return { error: parsed.error };
-      }
-
-      const { gameId, status, rating, review, platformId } = parsed.data;
-
       const existingGame = await db.query.userGames.findFirst({
-        where: and(eq(userGames.userId, user.id), eq(userGames.gameId, gameId)),
+        where: and(
+          eq(userGames.userId, user.id),
+          eq(userGames.gameId, body.gameId)
+        ),
       });
 
       if (existingGame) {
@@ -46,11 +41,12 @@ export const postUserGame = new Elysia().use(betterAuth).post(
         .insert(userGames)
         .values({
           userId: user.id,
-          gameId,
-          status,
-          rating: rating?.toString(),
-          review,
-          platformId,
+          gameId: body.gameId,
+          status:
+            body.status as (typeof userGames.status)["enumValues"][number],
+          rating: body.rating?.toString(),
+          review: body.review,
+          platformId: body.platformId,
           source: "manual",
         })
         .returning();
@@ -71,20 +67,13 @@ export const postUserGame = new Elysia().use(betterAuth).post(
       username: t.String(),
     }),
     body: t.Object({
-      gameId: t.Integer(),
+      gameId: t.Numeric(),
       status: t.String({
-        enum: [
-          "finished",
-          "playing",
-          "dropped",
-          "online",
-          "want_to_play",
-          "backlog",
-        ],
+        enum: userGames.status.enumValues,
       }),
-      rating: t.Optional(t.Number()),
+      rating: t.Numeric(),
       review: t.Optional(t.String()),
-      platformId: t.Optional(t.Integer()),
+      platformId: t.Numeric(),
     }),
     detail: {
       tags: ["user"],
@@ -97,7 +86,7 @@ export const postUserGame = new Elysia().use(betterAuth).post(
           description: "Game added successfully",
           content: {
             "application/json": {
-              schema: z.toJSONSchema(UserGameInsertSchema) as any,
+              schema: z.toJSONSchema(UserGamePostSchema) as any,
             },
           },
         },
