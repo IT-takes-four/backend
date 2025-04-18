@@ -2,10 +2,8 @@ import { Context, Elysia } from "elysia";
 import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import { jwt } from "@elysiajs/jwt";
-import { gamesRouter } from "@/routes/games";
-import { igdbRouter } from "@/routes/igdb";
-import { userRouter } from "@/routes/user";
 
+import { routes } from "@/routes";
 import { startWorkerInBackground } from "@/utils/redis/sqliteWriter";
 import { startSimilarGamesWorker } from "@/utils/redis/similarGamesQueue";
 import logger, {
@@ -127,9 +125,7 @@ const setupApp = async () => {
       app
         .get("/", () => "Quokka API is running!")
         .all("/auth/*", betterAuthView)
-        .use(gamesRouter)
-        .use(igdbRouter)
-        .use(userRouter)
+        .use(routes)
     );
 
   const PORT = process.env.PORT || 3030;
@@ -154,7 +150,6 @@ const setupApp = async () => {
   return app;
 };
 
-// Execute the async setup
 setupApp().catch((error) => {
   logger.exception(error, { source: "app-setup" });
   process.exit(1);

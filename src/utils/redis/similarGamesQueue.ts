@@ -2,11 +2,11 @@ import { eq, inArray } from "drizzle-orm";
 
 import { getRedisClient } from "./redisClient";
 import { RedisQueue } from "./redisQueue";
-import { IGDBGameResponse } from "../../routes/igdb/types";
+import { IGDBGameResponse } from "../igdb/types";
 import { db } from "../../../db/sqlite";
 import { game, gameToSimilarGame } from "../../../db/sqlite/schema";
 import { enqueueGameWrite } from "./sqliteWriter";
-import { fetchIGDBByIds } from "../../routes/igdb/utils";
+import { fetchIGDBByIds } from "../igdb/utils";
 import { createLogger } from "../enhancedLogger";
 import { getCurrentTimestamp } from "../time";
 

@@ -1,0 +1,106 @@
+---
+description: Folder structure of the project
+globs: 
+alwaysApply: false
+---
+
+# Project Structure
+```
+.
+├── .cursor
+│   └── rules
+│       ├── agent.mdc
+│       └── structure.mdc
+├── .dockerignore
+├── .env.example
+├── .github
+│   └── workflows
+│       └── docker-publish.yml
+├── .gitignore
+├── .scripts
+│   └── update_structure.sh
+├── bun.lock
+├── db
+│   ├── postgres
+│   │   ├── index.ts
+│   │   ├── migrations
+│   │   │   ├── 0000_public_sharon_ventura.sql
+│   │   │   └── meta
+│   │   │       ├── _journal.json
+│   │   │       └── 0000_snapshot.json
+│   │   └── schema.ts
+│   └── sqlite
+│       ├── index.ts
+│       ├── migrations
+│       │   ├── 0000_familiar_stephen_strange.sql
+│       │   └── meta
+│       │       ├── _journal.json
+│       │       └── 0000_snapshot.json
+│       ├── schema
+│       │   └── index.ts
+│       ├── seed-data
+│       │   ├── game-modes.ts
+│       │   ├── genres.ts
+│       │   ├── index.ts
+│       │   ├── platforms.ts
+│       │   ├── types.ts
+│       │   └── website-types.ts
+│       └── seed.ts
+├── docker-compose.dev.yml
+├── docker-compose.yml
+├── Dockerfile
+├── drizzle.postgres.config.ts
+├── drizzle.sqlite.config.ts
+├── entrypoint.sh
+├── games.db
+├── package.json
+├── README.md
+├── scripts
+│   └── load-testing
+│       ├── load-test-with-monitoring.ts
+│       ├── LOAD-TESTING.md
+│       └── run-load-test.sh
+├── SIMILAR_GAMES_SYSTEM.md
+├── src
+│   ├── index.ts
+│   ├── lib
+│   │   ├── auth.ts
+│   │   └── betterAuth.ts
+│   ├── routes
+│   │   ├── games
+│   │   │   ├── [id]
+│   │   │   │   └── GET.ts
+│   │   │   ├── GET.ts
+│   │   │   └── search
+│   │   │       └── GET.ts
+│   │   ├── index.ts
+│   │   ├── me
+│   │   │   └── GET.ts
+│   │   └── user
+│   │       └── [username]
+│   │           ├── games
+│   │           │   ├── [id]
+│   │           │   │   └── DELETE.ts
+│   │           │   ├── GET.ts
+│   │           │   └── POST.ts
+│   │           └── GET.ts
+│   └── utils
+│       ├── enhancedLogger.ts
+│       ├── gameTransformers.ts
+│       ├── igdb
+│       │   ├── token.ts
+│       │   ├── transformers.ts
+│       │   ├── types.ts
+│       │   └── utils.ts
+│       ├── image.ts
+│       ├── redis
+│       │   ├── redisClient.ts
+│       │   ├── redisQueue.ts
+│       │   ├── similarGamesQueue.ts
+│       │   └── sqliteWriter.ts
+│       ├── swaggerMerger.ts
+│       └── time.ts
+└── tsconfig.json
+
+31 directories, 64 files
+```

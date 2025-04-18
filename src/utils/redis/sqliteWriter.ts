@@ -3,8 +3,8 @@ import { eq } from "drizzle-orm";
 import { db } from "../../../db/sqlite";
 import { RedisQueue, QueueJob } from "./redisQueue";
 import { getRedisClient } from "./redisClient";
-import { IGDBGameResponse } from "../../routes/igdb/types";
-import { transformIGDBResponse } from "../../routes/igdb/transformers";
+import { IGDBGameResponse } from "../igdb/types";
+import { transformIGDBResponse } from "../igdb/transformers";
 import { getCurrentTimestamp } from "../time";
 import { createLogger } from "../enhancedLogger";
 
