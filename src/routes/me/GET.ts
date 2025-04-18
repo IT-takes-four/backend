@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { betterAuth } from "@/lib/betterAuth";
 import { db } from "@/db/postgres";
 import { user } from "@/db/postgres/schema";
+import { UnauthorizedErrorResponseSchema } from "@/schemas/error";
 
 export const getMe = new Elysia().use(betterAuth).get(
   "/me",
@@ -40,7 +41,14 @@ export const getMe = new Elysia().use(betterAuth).get(
       security: [{ bearerAuth: [] }],
       responses: {
         200: { description: "User data returned" },
-        401: { description: "Unauthorized" },
+        401: {
+          description: "Unauthorized",
+          content: {
+            "application/json": {
+              schema: UnauthorizedErrorResponseSchema,
+            },
+          },
+        },
       },
     },
   }

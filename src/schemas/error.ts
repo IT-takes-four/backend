@@ -10,9 +10,20 @@ export const BadRequestErrorResponseSchema = t.Object({
   error: t.Literal("Bad request"),
 });
 
+// 401 Unauthorized
+export const UnauthorizedErrorResponseSchema = t.Object({
+  error: t.Literal("Unauthorized"),
+  message: t.Literal("Authentication required"),
+});
+
 // 403 Forbidden
 export const ForbiddenErrorResponseSchema = t.Object({
   error: t.Literal("Forbidden"),
+});
+
+// 409 Conflict
+export const ConflictErrorResponseSchema = t.Object({
+  error: t.Literal("Conflict"),
 });
 
 // 500 Internal server error
