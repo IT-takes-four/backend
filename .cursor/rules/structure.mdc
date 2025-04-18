@@ -84,6 +84,9 @@ alwaysApply: false
 │   │           │   ├── GET.ts
 │   │           │   └── POST.ts
 │   │           └── GET.ts
+│   ├── schemas
+│   │   ├── error.ts
+│   │   └── game.ts
 │   └── utils
 │       ├── enhancedLogger.ts
 │       ├── gameTransformers.ts
@@ -102,5 +105,5 @@ alwaysApply: false
 │       └── time.ts
 └── tsconfig.json
 
-31 directories, 64 files
+32 directories, 66 files
 ```

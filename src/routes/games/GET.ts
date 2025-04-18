@@ -1,9 +1,11 @@
 import { Elysia, t } from "elysia";
 import { eq, and, inArray } from "drizzle-orm";
+import { z } from "zod";
 
 import { db } from "@/db/sqlite";
 import { transformGameResponse } from "@/utils/gameTransformers";
-
+import { GameResponseSchema } from "@/schemas/game";
+import { InternalServerErrorResponseSchema } from "@/schemas/error";
 import { game, gameToPlatform } from "@/db/sqlite/schema";
 
 export const getGames = new Elysia().get(
@@ -85,12 +87,26 @@ export const getGames = new Elysia().get(
     }),
     detail: {
       tags: ["games"],
-      summary: "Get all games with optional filtering and pagination",
+      summary: "Get all games",
       description:
         "Retrieves a list of games from the catalog. Supports filtering by platform and pagination.",
       responses: {
-        200: { description: "List of games with metadata" },
-        500: { description: "Internal server error" },
+        200: {
+          description: "List of games with metadata",
+          content: {
+            "application/json": {
+              schema: z.toJSONSchema(GameResponseSchema) as any,
+            },
+          },
+        },
+        500: {
+          description: "Internal server error",
+          content: {
+            "application/json": {
+              schema: InternalServerErrorResponseSchema,
+            },
+          },
+        },
       },
     },
   }
