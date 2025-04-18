@@ -1,8 +1,9 @@
 import { Elysia, t } from "elysia";
+import { eq } from "drizzle-orm";
+
 import { betterAuth } from "@/lib/betterAuth";
 import { db as postgresDb } from "@/db/postgres";
 import { user } from "@/db/postgres/schema";
-import { eq } from "drizzle-orm";
 
 export const getUser = new Elysia().use(betterAuth).get(
   "/:username",
