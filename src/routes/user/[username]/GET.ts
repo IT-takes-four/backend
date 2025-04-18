@@ -36,7 +36,7 @@ export const getUser = new Elysia().get(
       username: t.String(),
     }),
     detail: {
-      tags: ["user"],
+      tags: ["User"],
       summary: "Get a user by username",
       description: "Returns public info about a user, by their username",
       responses: {

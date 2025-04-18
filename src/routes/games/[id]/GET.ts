@@ -47,7 +47,7 @@ export const getGameById = new Elysia().get(
       id: t.Numeric(),
     }),
     detail: {
-      tags: ["games"],
+      tags: ["Games"],
       summary: "Get game by ID",
       description: "Returns full info about a game from the catalog by its ID.",
       responses: {

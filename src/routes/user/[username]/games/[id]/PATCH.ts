@@ -96,7 +96,7 @@ export const patchUserGame = new Elysia().use(betterAuth).patch(
       platformId: t.Optional(t.Numeric()),
     }),
     detail: {
-      tags: ["user"],
+      tags: ["User"],
       summary: "Update a game in user's library",
       description:
         "Updates game status, rating, review or platform in the authenticated user's library. At least one field must be provided.",

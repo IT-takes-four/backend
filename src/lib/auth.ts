@@ -4,6 +4,9 @@ import { username, admin, apiKey, openAPI } from "better-auth/plugins";
 import { passkey } from "better-auth/plugins/passkey";
 
 import { db } from "@/db/postgres";
+import { getConfig } from "@/config";
+
+const { trustedOrigins, isDev } = getConfig();
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -17,9 +20,19 @@ export const auth = betterAuth({
   },
   plugins: [username(), passkey(), admin(), apiKey(), openAPI()],
   secret: process.env.BETTER_AUTH_SECRET,
-  trustedOrigins: [
-    "http://localhost:3030",
-    "http://localhost:3000",
-    "http://localhost:5173",
-  ],
+  trustedOrigins: (request) => {
+    const origin = request.headers.get("origin");
+
+    if (!origin) return [];
+
+    if (isDev && origin.startsWith("http://localhost")) {
+      return [origin];
+    }
+
+    if (trustedOrigins.includes(origin)) {
+      return [origin];
+    }
+
+    return [];
+  },
 });

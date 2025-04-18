@@ -86,7 +86,7 @@ export const getGames = new Elysia().get(
       platformId: t.Optional(t.Numeric()),
     }),
     detail: {
-      tags: ["games"],
+      tags: ["Games"],
       summary: "Get all games",
       description:
         "Retrieves a list of games from the catalog. Supports filtering by platform and pagination.",
