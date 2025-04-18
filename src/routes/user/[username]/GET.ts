@@ -1,8 +1,11 @@
 import { Elysia, t } from "elysia";
 import { eq } from "drizzle-orm";
+import z from "zod";
 
 import { db as postgresDb } from "@/db/postgres";
 import { user } from "@/db/postgres/schema";
+import { NotFoundErrorResponseSchema } from "@/schemas/error";
+import { UserResponseSchema } from "@/schemas/user";
 
 export const getUser = new Elysia().get(
   "/user/:username",
@@ -39,9 +42,19 @@ export const getUser = new Elysia().get(
       responses: {
         200: {
           description: "User found",
+          content: {
+            "application/json": {
+              schema: z.toJSONSchema(UserResponseSchema) as any,
+            },
+          },
         },
         404: {
           description: "User not found",
+          content: {
+            "application/json": {
+              schema: NotFoundErrorResponseSchema,
+            },
+          },
         },
       },
     },

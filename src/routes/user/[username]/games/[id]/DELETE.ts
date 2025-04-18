@@ -5,6 +5,12 @@ import { db } from "@/db/postgres";
 import { userGames } from "@/db/postgres/schema";
 import { createLogger } from "@/utils/enhancedLogger";
 import { betterAuth } from "@/lib/betterAuth";
+import {
+  InternalServerErrorResponseSchema,
+  NotFoundErrorResponseSchema,
+} from "@/schemas/error";
+import { DeleteSuccessResponseSchema } from "@/schemas/delete";
+import z from "zod";
 
 const logger = createLogger("user-remove-game");
 
@@ -31,7 +37,7 @@ export const deleteUserGame = new Elysia().use(betterAuth).delete(
 
       return {
         message: "Game removed successfully",
-        game: deletedGame,
+        id: deletedGame.gameId,
       };
     } catch (error) {
       logger.exception(error);
@@ -53,12 +59,27 @@ export const deleteUserGame = new Elysia().use(betterAuth).delete(
       responses: {
         200: {
           description: "Game removed successfully",
+          content: {
+            "application/json": {
+              schema: z.toJSONSchema(DeleteSuccessResponseSchema) as any,
+            },
+          },
         },
         404: {
           description: "Game not found in library",
+          content: {
+            "application/json": {
+              schema: NotFoundErrorResponseSchema,
+            },
+          },
         },
         500: {
           description: "Unexpected server error",
+          content: {
+            "application/json": {
+              schema: InternalServerErrorResponseSchema,
+            },
+          },
         },
       },
     },

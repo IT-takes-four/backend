@@ -6,23 +6,15 @@ import { db } from "@/db/postgres";
 import { userGames } from "@/db/postgres/schema";
 import { betterAuth } from "@/lib/betterAuth";
 import { createLogger } from "@/utils/enhancedLogger";
+import {
+  ConflictErrorResponseSchema,
+  ForbiddenErrorResponseSchema,
+  InternalServerErrorResponseSchema,
+} from "@/schemas/error";
+import { BadRequestErrorResponseSchema } from "@/schemas/error";
+import { UserGameInsertSchema } from "@/schemas/userGame";
 
 const logger = createLogger("user-add-game");
-
-const userGameInsertSchema = z.object({
-  gameId: z.number(),
-  status: z.enum([
-    "finished",
-    "playing",
-    "dropped",
-    "online",
-    "want_to_play",
-    "backlog",
-  ]),
-  rating: z.number().min(0).max(10).optional(),
-  review: z.string().optional(),
-  platformId: z.number().optional(),
-});
 
 export const postUserGame = new Elysia().use(betterAuth).post(
   "/user/:username/games",
@@ -33,7 +25,7 @@ export const postUserGame = new Elysia().use(betterAuth).post(
         return { error: "You can only add games to your own library" };
       }
 
-      const parsed = userGameInsertSchema.safeParse(body);
+      const parsed = UserGameInsertSchema.safeParse(body);
       if (!parsed.success) {
         set.status = 400;
         return { error: parsed.error };
@@ -101,11 +93,46 @@ export const postUserGame = new Elysia().use(betterAuth).post(
         "Adds a game to the authenticated user's library. Username must match the authorized user.",
       security: [{ bearerAuth: [] }],
       responses: {
-        200: { description: "Game added successfully" },
-        400: { description: "Invalid request data" },
-        403: { description: "Forbidden — username mismatch" },
-        409: { description: "Game already exists" },
-        500: { description: "Server error" },
+        200: {
+          description: "Game added successfully",
+          content: {
+            "application/json": {
+              schema: z.toJSONSchema(UserGameInsertSchema) as any,
+            },
+          },
+        },
+        400: {
+          description: "Bad request",
+          content: {
+            "application/json": {
+              schema: BadRequestErrorResponseSchema,
+            },
+          },
+        },
+        403: {
+          description: "Forbidden — username mismatch",
+          content: {
+            "application/json": {
+              schema: ForbiddenErrorResponseSchema,
+            },
+          },
+        },
+        409: {
+          description: "Game already exists",
+          content: {
+            "application/json": {
+              schema: ConflictErrorResponseSchema,
+            },
+          },
+        },
+        500: {
+          description: "Server error",
+          content: {
+            "application/json": {
+              schema: InternalServerErrorResponseSchema,
+            },
+          },
+        },
       },
     },
   }
