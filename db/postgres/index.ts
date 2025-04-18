@@ -2,13 +2,14 @@ import { drizzle } from "drizzle-orm/bun-sql";
 // import { drizzle } from "drizzle-orm/node-postgres";
 
 import * as schema from "./schema";
+import { getConfig } from "@/config";
 
-const dbUrl = process.env.POSTGRES_URL;
+const { postgresUrl } = getConfig();
 
-if (!dbUrl) {
-  throw new Error("DATABASE_URL is not set");
+if (!postgresUrl) {
+  throw new Error("POSTGRES_URL is not set");
 }
 
-export const db = drizzle(dbUrl, { schema });
+export const db = drizzle(postgresUrl, { schema });
 
 export * from "./schema";

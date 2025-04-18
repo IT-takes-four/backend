@@ -1,5 +1,4 @@
 import { Context, Elysia } from "elysia";
-import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import { jwt } from "@elysiajs/jwt";
 
@@ -14,16 +13,20 @@ import logger, {
 } from "@/utils/enhancedLogger";
 import { auth } from "./lib/auth";
 import { mergeSwaggerSchemas } from "@/utils/swaggerMerger";
+import { getCors } from "@/utils/getCors";
+import { getConfig } from "@/config";
+
+const { redisUrl, sqliteUrl, postgresUrl } = getConfig();
 
 const validateEnvironment = () => {
   const missingVars = [];
 
-  if (!process.env.REDIS_URL) {
+  if (!redisUrl) {
     missingVars.push("REDIS_URL");
   }
 
-  if (!process.env.SQLITE_DATABASE_URL && !process.env.DATABASE_URL) {
-    missingVars.push("SQLITE_DATABASE_URL or DATABASE_URL");
+  if (!sqliteUrl && !postgresUrl) {
+    missingVars.push("SQLITE_DATABASE_URL or POSTGRES_URL");
   }
 
   if (missingVars.length > 0) {
@@ -42,7 +45,7 @@ const validateEnvironment = () => {
 const logLevel = (process.env.LOG_LEVEL || "info") as LogLevel;
 
 logger.level = logLevel;
-logger.info(`Starting Quokka API with log level: ${logLevel}`);
+logger.system(`Starting Quokka API with log level: ${logLevel}`);
 
 validateEnvironment();
 
@@ -68,15 +71,7 @@ const setupApp = async () => {
   const mergedDocumentation = await mergeSwaggerSchemas();
 
   const app = new Elysia({ name: "quokka-api" })
-    .use(
-      cors({
-        // origin: ["*", "http://localhost:3000", "http://localhost:5173"],
-        origin: "http://localhost:3000",
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        credentials: true,
-        allowedHeaders: ["Content-Type", "Authorization"],
-      })
-    )
+    .use(getCors())
     .use(
       swagger({
         documentation: mergedDocumentation,
@@ -121,12 +116,7 @@ const setupApp = async () => {
       };
     })
 
-    .group("/api", (app) =>
-      app
-        .get("/", () => "Quokka API is running!")
-        .all("/auth/*", betterAuthView)
-        .use(routes)
-    );
+    .group("/api", (app) => app.all("/auth/*", betterAuthView).use(routes));
 
   const PORT = process.env.PORT || 3030;
 

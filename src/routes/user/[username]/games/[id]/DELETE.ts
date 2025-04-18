@@ -51,7 +51,7 @@ export const deleteUserGame = new Elysia().use(betterAuth).delete(
       id: t.Numeric(),
     }),
     detail: {
-      tags: ["user"],
+      tags: ["User"],
       summary: "Remove a game from user's library",
       description:
         "Removes a game from the authenticated user's library by game ID.",

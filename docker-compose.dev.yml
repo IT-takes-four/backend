@@ -8,14 +8,19 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3030
+
+      - POSTGRES_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
       - SQLITE_DATABASE_URL=./games.db
       - REDIS_URL=redis://redis:6379
-      - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
-      - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
-      - LOG_LEVEL=${LOG_LEVEL}
-      - SENTRY_DSN=${SENTRY_DSN}
-      - POSTGRES_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-}
+
+      - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID:-}
+      - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET:-}
+
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - SENTRY_DSN=${SENTRY_DSN:-}
     volumes:
       - ./:/app
       - ./games.db:/app/games.db

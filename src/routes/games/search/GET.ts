@@ -315,7 +315,7 @@ export const getGamesSearch = new Elysia().get(
       fresh: t.Optional(t.String()),
     }),
     detail: {
-      tags: ["games"],
+      tags: ["Games"],
       summary: "Search games by name",
       description:
         "Performs full-text search against local DB and IGDB fallback. Uses caching and queues.",

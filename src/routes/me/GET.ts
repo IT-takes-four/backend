@@ -35,7 +35,7 @@ export const getMe = new Elysia().use(betterAuth).get(
   {
     auth: true,
     detail: {
-      tags: ["user"],
+      tags: ["User"],
       summary: "Get current authenticated user",
       description: "Returns info about the currently authenticated user",
       security: [{ bearerAuth: [] }],

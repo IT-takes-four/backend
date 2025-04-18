@@ -76,7 +76,7 @@ export const postUserGame = new Elysia().use(betterAuth).post(
       platformId: t.Numeric(),
     }),
     detail: {
-      tags: ["user"],
+      tags: ["User"],
       summary: "Add a game to user's library",
       description:
         "Adds a game to the authenticated user's library. Username must match the authorized user.",

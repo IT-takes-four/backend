@@ -83,7 +83,7 @@ export const getUserGames = new Elysia().get(
       username: t.String(),
     }),
     detail: {
-      tags: ["user"],
+      tags: ["User"],
       summary: "Get all games for a user by username",
       description:
         "Retrieves all games in a user's library with their statuses, ratings, and reviews",

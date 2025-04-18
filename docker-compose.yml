@@ -10,16 +10,24 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3030
+
+      - POSTGRES_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+      - SQLITE_DATABASE_URL=./games.db
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-}
+      - REDIS_URL=redis://redis:6379
+
       - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
       - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
 
-      - SQLITE_DATABASE_URL=./data/games.db
-      - RUN_MIGRATIONS=${RUN_MIGRATIONS:-true}
-      - RUN_SEED=${RUN_SEED:-false}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
 
       - LOG_LEVEL=${LOG_LEVEL:-error}
       - SENTRY_DSN=${SENTRY_DSN:-}
+      - TRUSTED_ORIGINS=${TRUSTED_ORIGINS:-}
+
+      - RUN_MIGRATIONS=${RUN_MIGRATIONS:-true}
+      - RUN_SEED=${RUN_SEED:-false}
+
     volumes:
       - sqlite-data:/app/data
     restart: unless-stopped
