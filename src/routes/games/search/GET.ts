@@ -1,5 +1,6 @@
 import { Elysia, t } from "elysia";
 import { like, sql } from "drizzle-orm";
+import { z } from "zod";
 
 import { db, game } from "@/db/sqlite";
 import { getRedisClient } from "@/utils/redis/redisClient";
@@ -9,6 +10,9 @@ import { enqueueGamesBatchWrite } from "@/utils/redis/sqliteWriter";
 import { enqueueSimilarGames } from "@/utils/redis/similarGamesQueue";
 import { createLogger } from "@/utils/enhancedLogger";
 import { getCurrentTimestamp } from "@/utils/time";
+import { GameResponseSchema } from "@/schemas/game";
+import { InternalServerErrorResponseSchema } from "@/schemas/error";
+import { BadRequestErrorResponseSchema } from "@/schemas/error";
 
 const logger = createLogger("games-search");
 
@@ -318,12 +322,27 @@ export const getGamesSearch = new Elysia().get(
       responses: {
         200: {
           description: "List of matched games",
+          content: {
+            "application/json": {
+              schema: z.toJSONSchema(z.array(GameResponseSchema)) as any,
+            },
+          },
         },
         400: {
           description: "Missing or invalid query",
+          content: {
+            "application/json": {
+              schema: BadRequestErrorResponseSchema,
+            },
+          },
         },
         500: {
           description: "Server error",
+          content: {
+            "application/json": {
+              schema: InternalServerErrorResponseSchema,
+            },
+          },
         },
       },
     },

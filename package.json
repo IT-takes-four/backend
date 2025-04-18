@@ -39,7 +39,8 @@
     "ioredis": "^5.6.1",
     "pg": "^8.14.1",
     "winston": "^3.17.0",
-    "winston-daily-rotate-file": "^5.0.0"
+    "winston-daily-rotate-file": "^5.0.0",
+    "zod": "^4.0.0-beta.20250418T073619"
   },
   "devDependencies": {
     "bun-types": "1.2.10",
