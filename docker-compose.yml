@@ -12,7 +12,7 @@ services:
       - PORT=3030
 
       - POSTGRES_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-      - SQLITE_DATABASE_URL=./games.db
+      - SQLITE_DATABASE_URL=./data/games.db
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-}
       - REDIS_URL=redis://redis:6379
 

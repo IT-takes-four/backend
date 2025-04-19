@@ -37,7 +37,7 @@ export const UserGameDataSchema = z.object({
   rating: z.string().nullable(),
   review: z.string().nullable().optional(),
   platformId: z.number().nullable(),
-  addedAt: z.iso.datetime().nullable(),
+  addedAt: z.string().nullable(),
   source: z.enum(["steam", "gog", "manual"]).optional(),
 });
 

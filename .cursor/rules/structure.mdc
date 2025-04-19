@@ -62,11 +62,15 @@ alwaysApply: false
 │       └── run-load-test.sh
 ├── SIMILAR_GAMES_SYSTEM.md
 ├── src
+│   ├── config.ts
 │   ├── index.ts
 │   ├── lib
 │   │   ├── auth.ts
 │   │   └── betterAuth.ts
 │   ├── routes
+│   │   ├── chat
+│   │   │   └── ai
+│   │   │       └── POST.ts
 │   │   ├── games
 │   │   │   ├── [id]
 │   │   │   │   └── GET.ts
@@ -80,16 +84,22 @@ alwaysApply: false
 │   │       └── [username]
 │   │           ├── games
 │   │           │   ├── [id]
-│   │           │   │   └── DELETE.ts
+│   │           │   │   ├── DELETE.ts
+│   │           │   │   └── PATCH.ts
 │   │           │   ├── GET.ts
 │   │           │   └── POST.ts
 │   │           └── GET.ts
 │   ├── schemas
+│   │   ├── chat.ts
+│   │   ├── delete.ts
 │   │   ├── error.ts
-│   │   └── game.ts
+│   │   ├── game.ts
+│   │   ├── user.ts
+│   │   └── userGame.ts
 │   └── utils
 │       ├── enhancedLogger.ts
 │       ├── gameTransformers.ts
+│       ├── getCors.ts
 │       ├── igdb
 │       │   ├── token.ts
 │       │   ├── transformers.ts
@@ -101,9 +111,10 @@ alwaysApply: false
 │       │   ├── redisQueue.ts
 │       │   ├── similarGamesQueue.ts
 │       │   └── sqliteWriter.ts
+│       ├── searchGames.ts
 │       ├── swaggerMerger.ts
 │       └── time.ts
 └── tsconfig.json
 
-32 directories, 66 files
+34 directories, 75 files
 ```

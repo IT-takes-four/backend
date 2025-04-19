@@ -1,6 +1,7 @@
 import { Elysia, t } from "elysia";
 import { eq, and, inArray } from "drizzle-orm";
 import { z } from "zod";
+import zodToJsonSchema from "zod-to-json-schema";
 
 import { db } from "@/db/sqlite";
 import { transformGameResponse } from "@/utils/gameTransformers";
@@ -95,7 +96,7 @@ export const getGames = new Elysia().get(
           description: "List of games with metadata",
           content: {
             "application/json": {
-              schema: z.toJSONSchema(GameResponseSchema) as any,
+              schema: zodToJsonSchema(z.array(GameResponseSchema)) as any,
             },
           },
         },

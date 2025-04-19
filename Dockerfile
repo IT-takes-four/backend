@@ -13,6 +13,9 @@ RUN bun install --frozen-lockfile
 # Copy source code
 COPY src/ src/
 
+# Copy database migrations and schema
+COPY db/ db/
+
 # Create database directory
 RUN mkdir -p data
 
