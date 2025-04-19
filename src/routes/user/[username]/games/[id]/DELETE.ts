@@ -1,5 +1,6 @@
 import { Elysia, t } from "elysia";
 import { and, eq } from "drizzle-orm";
+import zodToJsonSchema from "zod-to-json-schema";
 
 import { db } from "@/db/postgres";
 import { userGames } from "@/db/postgres/schema";
@@ -10,7 +11,6 @@ import {
   NotFoundErrorResponseSchema,
 } from "@/schemas/error";
 import { DeleteSuccessResponseSchema } from "@/schemas/delete";
-import z from "zod";
 
 const logger = createLogger("user-remove-game");
 
@@ -61,7 +61,7 @@ export const deleteUserGame = new Elysia().use(betterAuth).delete(
           description: "Game removed successfully",
           content: {
             "application/json": {
-              schema: z.toJSONSchema(DeleteSuccessResponseSchema) as any,
+              schema: zodToJsonSchema(DeleteSuccessResponseSchema) as any,
             },
           },
         },
