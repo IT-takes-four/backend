@@ -5,6 +5,11 @@ import { passkey } from "better-auth/plugins/passkey";
 
 import { db } from "@/db/postgres";
 import { getConfig } from "@/config";
+import {
+  resetPasswordEmailTemplate,
+  sendEmail,
+  sendVerificationEmailTemplate,
+} from "@/utils/email";
 
 const { trustedOrigins, isDev } = getConfig();
 
@@ -14,6 +19,27 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    resetPasswordTokenExpiresIn: 1 * 60 * 60 * 1000, // 1 hour
+    verifyEmailTokenExpiresIn: 24 * 60 * 60 * 1000, // 24 hours
+    requireEmailVerification: true,
+    sendResetPassword: async ({ user, url }) => {
+      await sendEmail({
+        to: user.email,
+        subject: "Reset Your Password - Quokka",
+        html: resetPasswordEmailTemplate(url),
+      });
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendEmail({
+        to: user.email,
+        subject: "Verify Your Email - Quokka",
+        html: sendVerificationEmailTemplate(url),
+      });
+    },
   },
   passkey: {
     enabled: true,
