@@ -45,7 +45,7 @@ const validateEnvironment = () => {
 const logLevel = (process.env.LOG_LEVEL || "info") as LogLevel;
 
 logger.level = logLevel;
-logger.system(`Starting Quokka API with log level: ${logLevel}`);
+logger.system(`Starting playdamnit API with log level: ${logLevel}`);
 
 validateEnvironment();
 
@@ -70,7 +70,7 @@ const betterAuthView = (context: Context) => {
 const setupApp = async () => {
   const mergedDocumentation = await mergeSwaggerSchemas();
 
-  const app = new Elysia({ name: "quokka-api" })
+  const app = new Elysia({ name: "playdamnit-api" })
     .use(getCors())
     .use(
       swagger({

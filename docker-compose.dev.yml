@@ -2,7 +2,7 @@
 services:
   api:
     image: oven/bun:latest
-    container_name: quokka-api-dev
+    container_name: playdamnit-api-dev
     ports:
       - "3030:3030"
     environment:
@@ -31,11 +31,11 @@ services:
     command: sh -c "bun install && bun run dev"
     restart: unless-stopped
     networks:
-      - quokka-network
+      - playdamnit-network
 
   postgres:
     image: postgres:17.4-alpine
-    container_name: quokka-postgres-dev
+    container_name: playdamnit-postgres-dev
     restart: unless-stopped
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -51,11 +51,11 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - quokka-network
+      - playdamnit-network
 
   redis:
     image: redis:7.4.2-alpine
-    container_name: quokka-redis-dev
+    container_name: playdamnit-redis-dev
     ports:
       - "6379:6379"
     volumes:
@@ -63,16 +63,16 @@ services:
     command: redis-server --appendonly yes
     restart: unless-stopped
     networks:
-      - quokka-network
+      - playdamnit-network
 
 volumes:
   postgres-data:
-    name: quokka-postgres-data-dev
+    name: playdamnit-postgres-data-dev
   redis-data:
-    name: quokka-redis-data-dev
+    name: playdamnit-redis-data-dev
   node_modules:
-    name: quokka-node-modules-dev
+    name: playdamnit-node-modules-dev
 
 networks:
-  quokka-network:
+  playdamnit-network:
     driver: bridge

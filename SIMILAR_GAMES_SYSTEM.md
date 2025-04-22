@@ -1,6 +1,6 @@
 # Similar Games System
 
-This document explains how the similar games system works in the Quokka application.
+This document explains how the similar games system works in the playdamnit application.
 
 ## Overview
 

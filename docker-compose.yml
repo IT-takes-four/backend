@@ -4,7 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: quokka-api
+    container_name: playdamnit-api
     ports:
       - "3030:3030"
     environment:
@@ -34,30 +34,30 @@ services:
       - sqlite-data:/app/data
     restart: unless-stopped
     networks:
-      - quokka-network
+      - playdamnit-network
   postgres:
     image: postgres:17.4-alpine
-    container_name: quokka-postgres
+    container_name: playdamnit-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: quokka
-      POSTGRES_PASSWORD: quokka_password
-      POSTGRES_DB: quokka
+      POSTGRES_USER: playdamnit
+      POSTGRES_PASSWORD: playdamnit_password
+      POSTGRES_DB: playdamnit
     ports:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U quokka"]
+      test: ["CMD-SHELL", "pg_isready -U playdamnit"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - quokka-network
+      - playdamnit-network
 
   redis:
     image: redis:7.4.2-alpine
-    container_name: quokka-redis
+    container_name: playdamnit-redis
     ports:
       - "6379:6379"
     volumes:
@@ -65,16 +65,16 @@ services:
     command: redis-server --appendonly yes
     restart: unless-stopped
     networks:
-      - quokka-network
+      - playdamnit-network
 
 volumes:
   sqlite-data:
-    name: quokka-sqlite-data
+    name: playdamnit-sqlite-data
   postgres-data:
-    name: quokka-postgres-data
+    name: playdamnit-postgres-data
   redis-data:
-    name: quokka-redis-data
+    name: playdamnit-redis-data
 
 networks:
-  quokka-network:
+  playdamnit-network:
     driver: bridge

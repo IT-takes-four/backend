@@ -1,6 +1,6 @@
 # Load Testing for Game Search API
 
-This directory contains scripts for load testing the `/games/search` endpoint of the Quokka API.
+This directory contains scripts for load testing the `/games/search` endpoint of the playdamnit API.
 
 ## Scripts
 
@@ -41,7 +41,7 @@ This directory contains scripts for load testing the `/games/search` endpoint of
 - [Bun](https://bun.sh/) installed
 - Redis server running (for monitoring)
 - SQLite database file (`games.db`) accessible
-- Quokka API server running at http://localhost:3030
+- playdamnit API server running at http://localhost:3030
 
 ## Usage
 

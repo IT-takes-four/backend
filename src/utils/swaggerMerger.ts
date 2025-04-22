@@ -31,9 +31,9 @@ export const mergeSwaggerSchemas = async (
   const baseDocumentation: OpenAPIV3.Document = {
     openapi: "3.0.0",
     info: {
-      title: "Quokka API",
+      title: "playdamnit API",
       version: "1.0.0",
-      description: "API for the Quokka game tracking application",
+      description: "API for the playdamnit game tracking application",
     },
     tags: [
       { name: "Games", description: "Game related endpoints" },

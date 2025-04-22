@@ -25,7 +25,7 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       await sendEmail({
         to: user.email,
-        subject: "Reset Your Password - Quokka",
+        subject: "Reset Your Password - playdamnit.com",
         html: resetPasswordEmailTemplate(url),
       });
     },
@@ -36,7 +36,7 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user, url }) => {
       await sendEmail({
         to: user.email,
-        subject: "Verify Your Email - Quokka",
+        subject: "Verify Your Email - playdamnit.com",
         html: sendVerificationEmailTemplate(url),
       });
     },

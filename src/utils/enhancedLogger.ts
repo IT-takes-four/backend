@@ -79,7 +79,7 @@ const consoleFormat = combine(
 const winstonLogger = winston.createLogger({
   level: process.env.LOG_LEVEL || "info",
   format: combine(timestamp(), json()),
-  defaultMeta: { service: "quokka-api" },
+  defaultMeta: { service: "playdamnit-api" },
   transports: [
     new winston.transports.Console({
       format: consoleFormat,

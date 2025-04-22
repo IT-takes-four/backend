@@ -1,4 +1,4 @@
-# Quokka API - Elysia with Bun runtime
+# playdamnit.com API - Elysia with Bun runtime
 
 ## Getting Started
 
@@ -158,7 +158,7 @@ npm run docker:db:restore
 ```bash
 npm run docker:build
 # or directly with Docker
-docker build -t quokka-api .
+docker build -t playdamnit-api .
 ```
 
 ### Running the Docker container
@@ -166,7 +166,7 @@ docker build -t quokka-api .
 ```bash
 npm run docker:run
 # or directly with Docker
-docker run -p 3030:3030 quokka-api
+docker run -p 3030:3030 playdamnit-api
 ```
 
 ### Using Docker Compose
@@ -210,7 +210,7 @@ docker-compose --profile seed run seed
 First, tag your image with your registry information:
 
 ```bash
-docker tag quokka-api username/quokka-api:latest
+docker tag playdamnit-api username/playdamnit-api:latest
 ```
 
 Then push it:
@@ -218,7 +218,7 @@ Then push it:
 ```bash
 npm run docker:push
 # or directly with Docker
-docker push username/quokka-api:latest
+docker push username/playdamnit-api:latest
 ```
 
 ## Using the Docker Image
@@ -229,10 +229,10 @@ The application is available as a Docker image from GitHub Container Registry:
 
 ```bash
 # Pull the latest image
-docker pull ghcr.io/OWNER/quokka-api:latest
+docker pull ghcr.io/OWNER/playdamnit-api:latest
 
 # Run the container
-docker run -p 3030:3030 ghcr.io/OWNER/quokka-api:latest
+docker run -p 3030:3030 ghcr.io/OWNER/playdamnit-api:latest
 ```
 
 Replace `OWNER` with your GitHub username or organization.
@@ -245,7 +245,7 @@ You can also specify a specific version tag instead of `latest`.
 version: "3"
 services:
   api:
-    image: ghcr.io/OWNER/quokka-api:latest
+    image: ghcr.io/OWNER/playdamnit-api:latest
     ports:
       - "3030:3030"
     environment:
@@ -289,10 +289,10 @@ Example using the GitHub Container Registry image:
 ```bash
 # Pull and run with automatic migrations (default)
 # Note: Will automatically seed if the database doesn't exist yet
-docker run -p 3030:3030 -v ./data:/app/data ghcr.io/username/quokka-api:latest
+docker run -p 3030:3030 -v ./data:/app/data ghcr.io/username/playdamnit-api:latest
 
 # Pull and run with explicit seeding (even on existing databases)
-docker run -p 3030:3030 -v ./data:/app/data -e RUN_SEED=true ghcr.io/username/quokka-api:latest
+docker run -p 3030:3030 -v ./data:/app/data -e RUN_SEED=true ghcr.io/username/playdamnit-api:latest
 ```
 
 ## Deployment
