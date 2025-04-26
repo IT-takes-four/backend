@@ -1,13 +1,9 @@
 import { Elysia, t } from "elysia";
-import { z } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
 
-import { GameResponseSchema } from "@/schemas/game";
+import { GameListResponseSchema } from "@/schemas/game";
 import { InternalServerErrorResponseSchema } from "@/schemas/error";
 import { BadRequestErrorResponseSchema } from "@/schemas/error";
 import { searchGamesWithCache } from "@/utils/searchGames";
-
-const asdasd = zodToJsonSchema(z.array(GameResponseSchema));
 
 export const getGamesSearch = new Elysia().get(
   "/games/search",
@@ -42,7 +38,7 @@ export const getGamesSearch = new Elysia().get(
           description: "List of matched games",
           content: {
             "application/json": {
-              schema: zodToJsonSchema(z.array(GameResponseSchema)) as any,
+              schema: GameListResponseSchema,
             },
           },
         },

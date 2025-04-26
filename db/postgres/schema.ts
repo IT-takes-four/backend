@@ -135,6 +135,7 @@ export const userGames = pgTable("user_games", {
   })
     .notNull()
     .default("manual"),
+  finishedAt: timestamp("finished_at").defaultNow().notNull(),
   addedAt: timestamp("added_at").defaultNow().notNull(),
   rating: decimal("rating", { precision: 3, scale: 1 }),
   review: text("review"),

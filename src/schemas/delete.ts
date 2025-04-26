@@ -1,6 +1,9 @@
-import { z } from "zod";
+import { t } from "elysia";
 
-export const DeleteSuccessResponseSchema = z.object({
-  message: z.literal("Removed successfully"),
-  id: z.number(),
-});
+export const DeleteSuccessResponseSchema = t.Object(
+  {
+    message: t.Literal("Removed successfully"),
+    id: t.Numeric(),
+  },
+  { $id: "DeleteSuccessResponse" }
+);

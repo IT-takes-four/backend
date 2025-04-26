@@ -1,0 +1,1 @@
+ALTER TABLE "user_games" ADD COLUMN "finished_at" timestamp DEFAULT now() NOT NULL;

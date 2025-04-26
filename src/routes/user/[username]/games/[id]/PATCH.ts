@@ -1,6 +1,5 @@
 import { Elysia, t } from "elysia";
 import { and, eq } from "drizzle-orm";
-import zodToJsonSchema from "zod-to-json-schema";
 
 import { db } from "@/db/postgres";
 import { userGames } from "@/db/postgres/schema";
@@ -106,7 +105,7 @@ export const patchUserGame = new Elysia().use(betterAuth).patch(
           description: "Game updated successfully",
           content: {
             "application/json": {
-              schema: zodToJsonSchema(UserGamePatchResponseSchema) as any,
+              schema: UserGamePatchResponseSchema,
             },
           },
         },

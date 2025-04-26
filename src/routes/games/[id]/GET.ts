@@ -1,6 +1,5 @@
 import { Elysia, t } from "elysia";
 import { eq } from "drizzle-orm";
-import { zodToJsonSchema } from "zod-to-json-schema";
 
 import { db } from "@/db/sqlite";
 import { game } from "@/db/sqlite/schema";
@@ -55,7 +54,7 @@ export const getGameById = new Elysia().get(
           description: "Game found",
           content: {
             "application/json": {
-              schema: zodToJsonSchema(GameResponseSchema) as any,
+              schema: GameResponseSchema,
             },
           },
         },

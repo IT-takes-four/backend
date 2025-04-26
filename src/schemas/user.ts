@@ -1,9 +1,12 @@
-import { z } from "zod";
+import { t } from "elysia";
 
-export const UserResponseSchema = z.object({
-  id: z.number(),
-  image: z.string(),
-  name: z.string(),
-  username: z.string(),
-  games: z.array(z.object({})),
-});
+export const UserResponseSchema = t.Object(
+  {
+    id: t.Numeric(),
+    image: t.String(),
+    name: t.String(),
+    username: t.String(),
+    games: t.Array(t.Object({})), // Пока пустой объект
+  },
+  { $id: "UserResponse" }
+);

@@ -12,8 +12,9 @@ import logger, {
   flushSentry,
 } from "@/utils/enhancedLogger";
 import { auth } from "./lib/auth";
-import { mergeSwaggerSchemas } from "@/utils/swaggerMerger";
+// import { mergeSwaggerSchemas } from "@/utils/swaggerMerger";
 import { getCors } from "@/utils/getCors";
+import { getSchemas } from "@/utils/getSchemas";
 import { getConfig } from "@/config";
 
 const { redisUrl, sqliteUrl, postgresUrl } = getConfig();
@@ -68,13 +69,27 @@ const betterAuthView = (context: Context) => {
 };
 
 const setupApp = async () => {
-  const mergedDocumentation = await mergeSwaggerSchemas();
+  // const mergedDocumentation = await mergeSwaggerSchemas();
 
   const app = new Elysia({ name: "playdamnit-api" })
     .use(getCors())
+    // .use(
+    //   swagger({
+    //     documentation: mergedDocumentation,
+    //   })
+    // )
     .use(
       swagger({
-        documentation: mergedDocumentation,
+        path: "/swagger",
+        documentation: {
+          info: {
+            title: "Your API",
+            version: "1.0.0",
+          },
+          components: {
+            schemas: getSchemas(),
+          },
+        },
       })
     )
     .use(

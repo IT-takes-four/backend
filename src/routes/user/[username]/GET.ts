@@ -1,6 +1,5 @@
 import { Elysia, t } from "elysia";
 import { eq } from "drizzle-orm";
-import zodToJsonSchema from "zod-to-json-schema";
 
 import { db as postgresDb } from "@/db/postgres";
 import { user } from "@/db/postgres/schema";
@@ -44,7 +43,7 @@ export const getUser = new Elysia().get(
           description: "User found",
           content: {
             "application/json": {
-              schema: zodToJsonSchema(UserResponseSchema) as any,
+              schema: UserResponseSchema,
             },
           },
         },

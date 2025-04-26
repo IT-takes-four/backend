@@ -1,42 +1,60 @@
-import { z } from "zod";
-import { GameResponseSchema } from "./game";
+import { t } from "elysia";
 
-export const ChatRoleSchema = z.enum([
-  "user",
-  "assistant",
-  "system",
-  "function",
-]);
+export const ChatRoleSchema = t.Union(
+  [
+    t.Literal("user"),
+    t.Literal("assistant"),
+    t.Literal("system"),
+    t.Literal("function"),
+  ],
+  { $id: "ChatRole" }
+);
 
-const BaseMessageSchema = z.object({
-  role: z.enum(["user", "assistant", "system"]),
-  content: z.string().nullable(),
-});
+export const BaseMessageSchema = t.Object(
+  {
+    role: t.Union([
+      t.Literal("user"),
+      t.Literal("assistant"),
+      t.Literal("system"),
+    ]),
+    content: t.Nullable(t.String()),
+  },
+  { $id: "BaseMessage" }
+);
 
-const FunctionMessageSchema = z.object({
-  role: z.literal("function"),
-  name: z.string(),
-  content: z.string().nullable(),
-});
+export const FunctionMessageSchema = t.Object(
+  {
+    role: t.Literal("function"),
+    name: t.String(),
+    content: t.Nullable(t.String()),
+  },
+  { $id: "FunctionMessage" }
+);
 
-export const MessageSchema = z.union([
-  BaseMessageSchema,
-  FunctionMessageSchema,
-]);
+export const MessageSchema = t.Union(
+  [t.Ref("BaseMessage"), t.Ref("FunctionMessage")],
+  { $id: "Message" }
+);
 
-export const OpenAIChatRequestSchema = z.object({
-  messages: z.array(MessageSchema),
-  showOnlyGames: z.boolean().optional().default(true),
-});
+export const OpenAIChatRequestSchema = t.Object(
+  {
+    messages: t.Array(t.Ref("Message")),
+    showOnlyGames: t.Optional(t.Boolean({ default: true })),
+  },
+  { $id: "OpenAIChatRequest" }
+);
 
-export const OpenAIChatResponseSchema = z.object({
-  message: z.object({
-    role: z.literal("assistant"),
-    content: z.string(),
-    gameData: GameResponseSchema,
-    gameResults: z.array(GameResponseSchema).optional(),
-    userRating: z.number().optional(),
-    userStatus: z.string().optional(),
-    userReview: z.string().optional(),
-  }),
-});
+export const OpenAIChatResponseSchema = t.Object(
+  {
+    message: t.Object({
+      role: t.Literal("assistant"),
+      content: t.String(),
+      gameData: t.Ref("GameResponse"),
+      gameResults: t.Optional(t.Array(t.Ref("GameResponse"))),
+      userRating: t.Optional(t.Numeric()),
+      userStatus: t.Optional(t.String()),
+      userReview: t.Optional(t.String()),
+    }),
+  },
+  { $id: "OpenAIChatResponse" }
+);
