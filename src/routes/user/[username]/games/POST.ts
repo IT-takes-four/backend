@@ -5,13 +5,6 @@ import { db } from "@/db/postgres";
 import { userGames } from "@/db/postgres/schema";
 import { betterAuth } from "@/lib/betterAuth";
 import { createLogger } from "@/utils/enhancedLogger";
-import {
-  BadRequestErrorResponseSchema,
-  ConflictErrorResponseSchema,
-  ForbiddenErrorResponseSchema,
-  InternalServerErrorResponseSchema,
-} from "@/schemas/error";
-import { UserGamePostSchema } from "@/schemas/userGame";
 
 const logger = createLogger("user-add-game");
 
@@ -45,6 +38,7 @@ export const postUserGame = new Elysia().use(betterAuth).post(
             body.status as (typeof userGames.status)["enumValues"][number],
           rating: body.rating?.toString(),
           review: body.review,
+          endedAt: body.endedAt ? new Date(body.endedAt) : null,
           platformId: body.platformId,
           source: "manual",
         })
@@ -65,63 +59,55 @@ export const postUserGame = new Elysia().use(betterAuth).post(
     params: t.Object({
       username: t.String(),
     }),
-    body: t.Object({
-      gameId: t.Numeric(),
-      status: t.String({
-        enum: userGames.status.enumValues,
-      }),
-      rating: t.Numeric(),
-      review: t.Optional(t.String()),
-      platformId: t.Numeric(),
-    }),
-    detail: {
-      tags: ["User"],
-      summary: "Add a game to user's library",
-      description:
-        "Adds a game to the authenticated user's library. Username must match the authorized user.",
-      security: [{ bearerAuth: [] }],
-      responses: {
-        200: {
-          description: "Game added successfully",
-          content: {
-            "application/json": {
-              schema: UserGamePostSchema,
+    body: t.Object(
+      {
+        gameId: t.Numeric({
+          error: "Game ID must be a valid number",
+        }),
+        status: t.String({
+          enum: userGames.status.enumValues,
+        }),
+        rating: t.Numeric({
+          minimum: 0,
+          maximum: 10,
+          error: "Rating must be between 0 and 10",
+        }),
+        review: t.Optional(
+          t.String({
+            minLength: 3,
+            maxLength: 5000,
+            error: "Review must be between 3 and 5000 characters",
+          })
+        ),
+        platformId: t.Numeric({
+          error: "Platform ID must be a valid number",
+        }),
+        endedAt: t.Optional(
+          t.String({
+            transform: (value: string) => {
+              const date = new Date(value);
+              if (isNaN(date.getTime())) {
+                throw new Error("Invalid date format");
+              }
+              if (date > new Date()) {
+                throw new Error("Finished date cannot be in the future");
+              }
+              return value;
             },
-          },
-        },
-        400: {
-          description: "Bad request",
-          content: {
-            "application/json": {
-              schema: BadRequestErrorResponseSchema,
-            },
-          },
-        },
-        403: {
-          description: "Forbidden — username mismatch",
-          content: {
-            "application/json": {
-              schema: ForbiddenErrorResponseSchema,
-            },
-          },
-        },
-        409: {
-          description: "Game already exists",
-          content: {
-            "application/json": {
-              schema: ConflictErrorResponseSchema,
-            },
-          },
-        },
-        500: {
-          description: "Server error",
-          content: {
-            "application/json": {
-              schema: InternalServerErrorResponseSchema,
-            },
-          },
-        },
+          })
+        ),
       },
-    },
+      {
+        error: (input: { value: Record<string, any> }) => {
+          if (
+            (input.value.status === "finished" ||
+              input.value.status === "dropped") &&
+            !input.value.endedAt
+          ) {
+            return "Date is required when status is 'finished' or 'dropped'";
+          }
+        },
+      }
+    ),
   }
 );

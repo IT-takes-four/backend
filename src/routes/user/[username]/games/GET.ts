@@ -5,11 +5,6 @@ import { db as postgresDb } from "@/db/postgres";
 import { db as sqliteDb } from "@/db/sqlite";
 import { userGames, user } from "@/db/postgres/schema";
 import { transformGameResponse } from "@/utils/gameTransformers";
-import {
-  InternalServerErrorResponseSchema,
-  NotFoundErrorResponseSchema,
-} from "@/schemas/error";
-import { UserGameResponseSchema } from "@/schemas/userGame";
 
 export const getUserGames = new Elysia().get(
   "/user/:username/games",
@@ -81,37 +76,5 @@ export const getUserGames = new Elysia().get(
     params: t.Object({
       username: t.String(),
     }),
-    detail: {
-      tags: ["User"],
-      summary: "Get all games for a user by username",
-      description:
-        "Retrieves all games in a user's library with their statuses, ratings, and reviews",
-      responses: {
-        200: {
-          description: "List of games returned",
-          content: {
-            "application/json": {
-              schema: UserGameResponseSchema,
-            },
-          },
-        },
-        404: {
-          description: "User not found",
-          content: {
-            "application/json": {
-              schema: NotFoundErrorResponseSchema,
-            },
-          },
-        },
-        500: {
-          description: "Internal server error",
-          content: {
-            "application/json": {
-              schema: InternalServerErrorResponseSchema,
-            },
-          },
-        },
-      },
-    },
   }
 );

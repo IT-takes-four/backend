@@ -5,13 +5,6 @@ import { db } from "@/db/postgres";
 import { userGames } from "@/db/postgres/schema";
 import { betterAuth } from "@/lib/betterAuth";
 import { createLogger } from "@/utils/enhancedLogger";
-import {
-  BadRequestErrorResponseSchema,
-  ForbiddenErrorResponseSchema,
-  InternalServerErrorResponseSchema,
-  NotFoundErrorResponseSchema,
-} from "@/schemas/error";
-import { UserGamePatchResponseSchema } from "@/schemas/userGame";
 
 const logger = createLogger("user-update-game");
 
@@ -94,54 +87,5 @@ export const patchUserGame = new Elysia().use(betterAuth).patch(
       review: t.Optional(t.String()),
       platformId: t.Optional(t.Numeric()),
     }),
-    detail: {
-      tags: ["User"],
-      summary: "Update a game in user's library",
-      description:
-        "Updates game status, rating, review or platform in the authenticated user's library. At least one field must be provided.",
-      security: [{ bearerAuth: [] }],
-      responses: {
-        200: {
-          description: "Game updated successfully",
-          content: {
-            "application/json": {
-              schema: UserGamePatchResponseSchema,
-            },
-          },
-        },
-        400: {
-          description: "Invalid input or no fields provided",
-          content: {
-            "application/json": {
-              schema: BadRequestErrorResponseSchema,
-            },
-          },
-        },
-        403: {
-          description: "Forbidden — username mismatch",
-          content: {
-            "application/json": {
-              schema: ForbiddenErrorResponseSchema,
-            },
-          },
-        },
-        404: {
-          description: "Game not found",
-          content: {
-            "application/json": {
-              schema: NotFoundErrorResponseSchema,
-            },
-          },
-        },
-        500: {
-          description: "Server error",
-          content: {
-            "application/json": {
-              schema: InternalServerErrorResponseSchema,
-            },
-          },
-        },
-      },
-    },
   }
 );

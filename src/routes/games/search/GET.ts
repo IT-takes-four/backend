@@ -1,8 +1,5 @@
 import { Elysia, t } from "elysia";
 
-import { GameListResponseSchema } from "@/schemas/game";
-import { InternalServerErrorResponseSchema } from "@/schemas/error";
-import { BadRequestErrorResponseSchema } from "@/schemas/error";
 import { searchGamesWithCache } from "@/utils/searchGames";
 
 export const getGamesSearch = new Elysia().get(
@@ -28,37 +25,5 @@ export const getGamesSearch = new Elysia().get(
       offset: t.Optional(t.Numeric()),
       fresh: t.Optional(t.String()),
     }),
-    detail: {
-      tags: ["Games"],
-      summary: "Search games by name",
-      description:
-        "Performs full-text search against local DB and IGDB fallback. Uses caching and queues.",
-      responses: {
-        200: {
-          description: "List of matched games",
-          content: {
-            "application/json": {
-              schema: GameListResponseSchema,
-            },
-          },
-        },
-        400: {
-          description: "Missing or invalid query",
-          content: {
-            "application/json": {
-              schema: BadRequestErrorResponseSchema,
-            },
-          },
-        },
-        500: {
-          description: "Server error",
-          content: {
-            "application/json": {
-              schema: InternalServerErrorResponseSchema,
-            },
-          },
-        },
-      },
-    },
   }
 );

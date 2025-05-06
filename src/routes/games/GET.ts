@@ -3,8 +3,6 @@ import { eq, and, inArray } from "drizzle-orm";
 
 import { db } from "@/db/sqlite";
 import { transformGameResponse } from "@/utils/gameTransformers";
-import { GameListResponseSchema, GameResponseSchema } from "@/schemas/game";
-import { InternalServerErrorResponseSchema } from "@/schemas/error";
 import { game, gameToPlatform } from "@/db/sqlite/schema";
 
 export const getGames = new Elysia().get(
@@ -84,29 +82,5 @@ export const getGames = new Elysia().get(
       offset: t.Optional(t.Numeric({ default: 0 })),
       platformId: t.Optional(t.Numeric()),
     }),
-    detail: {
-      tags: ["Games"],
-      summary: "Get all games",
-      description:
-        "Retrieves a list of games from the catalog. Supports filtering by platform and pagination.",
-      responses: {
-        200: {
-          description: "List of games with metadata",
-          content: {
-            "application/json": {
-              schema: GameListResponseSchema,
-            },
-          },
-        },
-        500: {
-          description: "Internal server error",
-          content: {
-            "application/json": {
-              schema: InternalServerErrorResponseSchema,
-            },
-          },
-        },
-      },
-    },
   }
 );

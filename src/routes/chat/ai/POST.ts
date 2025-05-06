@@ -5,7 +5,6 @@ import { z } from "zod";
 
 import { searchGamesWithCache } from "@/utils/searchGames";
 import { betterAuth } from "@/lib/betterAuth";
-import { UnauthorizedErrorResponseSchema } from "@/schemas/error";
 
 const searchGamesTool = tool({
   description: "Search for games by name or description",
@@ -71,26 +70,5 @@ export const postAIChat = new Elysia().use(betterAuth).post(
         })
       ),
     }),
-    detail: {
-      tags: ["Chat"],
-      summary: "Stream AI chat with game assistant",
-      description: "Uses OpenAI + function calling via ai-sdk",
-      responses: {
-        200: {
-          description: "Streamed assistant response (SSE)",
-          content: {
-            "text/event-stream": {},
-          },
-        },
-        401: {
-          description: "Unauthorized",
-          content: {
-            "application/json": {
-              schema: UnauthorizedErrorResponseSchema,
-            },
-          },
-        },
-      },
-    },
   }
 );

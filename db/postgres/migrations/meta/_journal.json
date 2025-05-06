@@ -15,6 +15,20 @@
       "when": 1745712256276,
       "tag": "0001_faithful_sue_storm",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1745793294024,
+      "tag": "0002_curly_gargoyle",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1745805054933,
+      "tag": "0003_unique_harry_osborn",
+      "breakpoints": true
     }
   ]
 }

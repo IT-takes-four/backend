@@ -1,0 +1,1 @@
+ALTER TABLE "user_games" RENAME COLUMN "endedAt" TO "ended_at";

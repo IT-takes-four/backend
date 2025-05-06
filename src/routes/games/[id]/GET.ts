@@ -4,12 +4,6 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db/sqlite";
 import { game } from "@/db/sqlite/schema";
 import { transformGameResponse } from "@/utils/gameTransformers";
-import {
-  InternalServerErrorResponseSchema,
-  NotFoundErrorResponseSchema,
-  BadRequestErrorResponseSchema,
-} from "@/schemas/error";
-import { GameResponseSchema } from "@/schemas/game";
 
 export const getGameById = new Elysia().get(
   "/games/:id",
@@ -45,44 +39,5 @@ export const getGameById = new Elysia().get(
     params: t.Object({
       id: t.Numeric(),
     }),
-    detail: {
-      tags: ["Games"],
-      summary: "Get game by ID",
-      description: "Returns full info about a game from the catalog by its ID.",
-      responses: {
-        200: {
-          description: "Game found",
-          content: {
-            "application/json": {
-              schema: GameResponseSchema,
-            },
-          },
-        },
-        400: {
-          description: "Bad request",
-          content: {
-            "application/json": {
-              schema: BadRequestErrorResponseSchema,
-            },
-          },
-        },
-        404: {
-          description: "Game not found",
-          content: {
-            "application/json": {
-              schema: NotFoundErrorResponseSchema,
-            },
-          },
-        },
-        500: {
-          description: "Unexpected error",
-          content: {
-            "application/json": {
-              schema: InternalServerErrorResponseSchema,
-            },
-          },
-        },
-      },
-    },
   }
 );

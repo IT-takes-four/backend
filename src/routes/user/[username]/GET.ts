@@ -3,8 +3,6 @@ import { eq } from "drizzle-orm";
 
 import { db as postgresDb } from "@/db/postgres";
 import { user } from "@/db/postgres/schema";
-import { NotFoundErrorResponseSchema } from "@/schemas/error";
-import { UserResponseSchema } from "@/schemas/user";
 
 export const getUser = new Elysia().get(
   "/user/:username",
@@ -34,28 +32,5 @@ export const getUser = new Elysia().get(
     params: t.Object({
       username: t.String(),
     }),
-    detail: {
-      tags: ["User"],
-      summary: "Get a user by username",
-      description: "Returns public info about a user, by their username",
-      responses: {
-        200: {
-          description: "User found",
-          content: {
-            "application/json": {
-              schema: UserResponseSchema,
-            },
-          },
-        },
-        404: {
-          description: "User not found",
-          content: {
-            "application/json": {
-              schema: NotFoundErrorResponseSchema,
-            },
-          },
-        },
-      },
-    },
   }
 );
