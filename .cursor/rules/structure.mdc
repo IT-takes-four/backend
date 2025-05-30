@@ -10,24 +10,36 @@ alwaysApply: false
 ├── .cursor
 │   └── rules
 │       ├── agent.mdc
-│       └── structure.mdc
+│       ├── structure.mdc
+│       └── use-bun-instead-of-node-vite-npm-pnpm.mdc
 ├── .dockerignore
 ├── .env.example
 ├── .github
 │   └── workflows
-│       └── docker-publish.yml
+│       ├── docker-publish.yml
+│       └── orval-client-generator.yml
 ├── .gitignore
 ├── .scripts
 │   └── update_structure.sh
+├── api-client
+│   ├── package.json
+│   ├── README.md
+│   └── tsconfig.json
 ├── bun.lock
 ├── db
 │   ├── postgres
 │   │   ├── index.ts
 │   │   ├── migrations
 │   │   │   ├── 0000_public_sharon_ventura.sql
+│   │   │   ├── 0001_faithful_sue_storm.sql
+│   │   │   ├── 0002_curly_gargoyle.sql
+│   │   │   ├── 0003_unique_harry_osborn.sql
 │   │   │   └── meta
 │   │   │       ├── _journal.json
-│   │   │       └── 0000_snapshot.json
+│   │   │       ├── 0000_snapshot.json
+│   │   │       ├── 0001_snapshot.json
+│   │   │       ├── 0002_snapshot.json
+│   │   │       └── 0003_snapshot.json
 │   │   └── schema.ts
 │   └── sqlite
 │       ├── index.ts
@@ -53,7 +65,13 @@ alwaysApply: false
 ├── drizzle.sqlite.config.ts
 ├── entrypoint.sh
 ├── games.db
+├── openapi.yaml
 ├── package.json
+├── playdamnit-client
+│   ├── .npmignore
+│   ├── package.json
+│   ├── README.md
+│   └── tsconfig.json
 ├── README.md
 ├── scripts
 │   └── load-testing
@@ -61,6 +79,7 @@ alwaysApply: false
 │       ├── LOAD-TESTING.md
 │       └── run-load-test.sh
 ├── SIMILAR_GAMES_SYSTEM.md
+├── spec.yaml
 ├── src
 │   ├── config.ts
 │   ├── index.ts
@@ -89,14 +108,8 @@ alwaysApply: false
 │   │           │   ├── GET.ts
 │   │           │   └── POST.ts
 │   │           └── GET.ts
-│   ├── schemas
-│   │   ├── chat.ts
-│   │   ├── delete.ts
-│   │   ├── error.ts
-│   │   ├── game.ts
-│   │   ├── user.ts
-│   │   └── userGame.ts
 │   └── utils
+│       ├── email.ts
 │       ├── enhancedLogger.ts
 │       ├── gameTransformers.ts
 │       ├── getCors.ts
@@ -116,5 +129,5 @@ alwaysApply: false
 │       └── time.ts
 └── tsconfig.json
 
-34 directories, 75 files
+35 directories, 87 files
 ```

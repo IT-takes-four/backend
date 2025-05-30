@@ -24,31 +24,35 @@
     "db:sqlite:generate": "bun drizzle-kit generate --config=drizzle.sqlite.config.ts",
     "db:sqlite:migrate": "bun drizzle-kit migrate --config=drizzle.sqlite.config.ts",
     "db:sqlite:studio": "bun drizzle-kit studio --config=drizzle.sqlite.config.ts",
-    "db:sqlite:seed": "bun run src/db/seed.ts"
+    "db:sqlite:seed": "bun run src/db/seed.ts",
+    "orval:generate": "orval"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.3.22",
-    "@elysiajs/cors": "^1.3.0",
+    "@elysiajs/cors": "^1.3.3",
     "@elysiajs/jwt": "^1.3.0",
     "@elysiajs/swagger": "^1.3.0",
-    "@libsql/client": "^0.15.4",
-    "@sentry/bun": "^9.17.0",
-    "ai": "^4.3.15",
+    "@libsql/client": "^0.15.8",
+    "@sentry/bun": "^9.24.0",
+    "ai": "^4.3.16",
     "axios": "^1.9.0",
-    "better-auth": "^1.2.7",
-    "drizzle-orm": "^0.43.1",
-    "elysia": "1.3.0",
+    "better-auth": "^1.2.8",
+    "drizzle-orm": "^0.44.1",
+    "elysia": "1.3.3",
     "ioredis": "^5.6.1",
-    "openai": "^4.97.0",
-    "pg": "^8.15.6",
+    "openai": "^5.0.1",
+    "pg": "^8.16.0",
     "resend": "^4.5.1",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0",
-    "zod": "^3.24.4",
+    "zod": "^3.25.42",
     "zod-to-json-schema": "^3.24.5"
   },
   "devDependencies": {
-    "bun-types": "1.2.12",
-    "drizzle-kit": "^0.31.1"
+    "bun-types": "1.2.15",
+    "drizzle-kit": "^0.31.1",
+    "@types/bun": "^1.2.15",
+    "orval": "^7.9.0",
+    "prettier": "^3.4.2"
   }
 }

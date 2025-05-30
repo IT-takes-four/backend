@@ -1,0 +1,15 @@
+*.ts
+*.tsx
+!*.d.ts
+tsconfig.json
+.git
+.gitignore
+README.md
+node_modules
+src/
+test/
+tests/
+__tests__/
+*.test.*
+*.spec.*
+bun.lock 

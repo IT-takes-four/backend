@@ -1,0 +1,117 @@
+name: Generate and Publish API Client
+
+on:
+  push:
+    branches: ["master"]
+    paths:
+      - "spec.yaml"
+  pull_request:
+    branches: ["master"]
+    paths:
+      - "spec.yaml"
+
+jobs:
+  generate-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Create Orval configuration
+        run: |
+          cat > orval.config.ts << 'EOF'
+          import { defineConfig } from "orval";
+
+          export default defineConfig({
+            playdamnit: {
+              input: "./spec.yaml",
+              output: {
+                target: "./api-client/index.ts",
+                client: "react-query",
+                override: {
+                  mutator: {
+                    path: "./api-client/custom-axios.ts",
+                    name: "customInstance",
+                  },
+                },
+              },
+              hooks: {
+                afterAllFilesWrite: "prettier --write",
+              },
+            },
+          });
+          EOF
+
+      - name: Generate API client
+        run: bun run orval:generate
+
+      - name: Setup Node.js for npm publish
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install npm (for publishing)
+        run: npm install -g npm
+
+      - name: Build TypeScript client
+        working-directory: ./api-client
+        run: |
+          bun install
+          bun run build
+
+      - name: Get package version
+        id: package-version
+        working-directory: ./api-client
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+
+          # Parse version (assuming format x.y.z)
+          IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
+
+          # Increment patch version
+          NEW_PATCH=$((patch + 1))
+          NEW_VERSION="${major}.${minor}.${NEW_PATCH}"
+
+          echo "New version: $NEW_VERSION"
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+
+          # Update package.json with new version
+          npm version ${NEW_VERSION} --no-git-tag-version
+
+      - name: Commit version update
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add api-client/package.json
+          git commit -m "chore: bump api client version to ${{ steps.package-version.outputs.version }}" || exit 0
+          git push
+
+      - name: Publish to npm
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        working-directory: ./api-client
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Cleanup temporary files
+        if: always()
+        run: |
+          rm -f orval.config.ts

@@ -52,3 +52,12 @@ logs/*
 *.log
 *.log.*
 *.log.*.*
+
+# Generated API client (keep package structure)
+api-client/index.ts
+api-client/index.js
+api-client/index.d.ts
+api-client/*.js
+api-client/*.d.ts
+api-client/*.map
+api-client/node_modules
