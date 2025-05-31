@@ -1035,6 +1035,8 @@ paths:
         - Chat
       summary: Stream AI chat with game assistant
       description: Uses OpenAI + function calling via ai-sdk
+      security:
+        - cookieAuth: []
       responses:
         "200":
           description: Streamed assistant response (SSE)
@@ -1046,6 +1048,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UnauthorizedErrorResponse"
+        "500":
+          description: AI service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
       requestBody:
         required: true
         content:
