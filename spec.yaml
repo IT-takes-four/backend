@@ -158,8 +158,10 @@ components:
           nullable: true
         width:
           type: number
+          nullable: true
         height:
           type: number
+          nullable: true
       required:
         - id
         - url
@@ -222,10 +224,13 @@ components:
           nullable: true
         firstReleaseDate:
           type: number
+          nullable: true
         createdAt:
           type: number
+          nullable: true
         totalRating:
           type: number
+          nullable: true
         involvedCompanies:
           type: string
           nullable: true
@@ -234,6 +239,7 @@ components:
           nullable: true
         updatedAt:
           type: number
+          nullable: true
         isPopular:
           type: boolean
         cover:
@@ -266,6 +272,7 @@ components:
         - id
         - name
         - slug
+        - isPopular
         - cover
         - screenshots
         - websites
@@ -284,8 +291,10 @@ components:
           nullable: true
         width:
           type: number
+          nullable: true
         height:
           type: number
+          nullable: true
       required:
         - id
         - url
