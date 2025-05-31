@@ -23,7 +23,7 @@ export const getGames = new Elysia().get(
 
         if (gameIdFilter.length === 0) {
           return {
-            games: [],
+            results: [],
             meta: { total: 0, limit: Number(limit), offset: Number(offset) },
           };
         }
@@ -63,7 +63,7 @@ export const getGames = new Elysia().get(
       ]);
 
       return {
-        games: games.map(transformGameResponse),
+        results: games.map(transformGameResponse),
         meta: {
           total,
           limit: Number(limit),

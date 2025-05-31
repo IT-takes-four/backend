@@ -7,16 +7,24 @@ export const getGamesSearch = new Elysia().get(
   async ({ query }) => {
     const searchQuery = query?.q as string;
     const limit = query?.limit ? query.limit : 50;
-    const offset = query?.offset ? query.limit : 0;
+    const offset = query?.offset ? query.offset : 0;
     const forceFresh = query?.fresh === "true" || query?.fresh === "1";
 
-    const results = await searchGamesWithCache(
+    const searchResults = await searchGamesWithCache(
       searchQuery,
       limit,
       offset,
       forceFresh
     );
-    return results;
+
+    return {
+      results: searchResults.results,
+      meta: {
+        total: searchResults.meta.total,
+        limit: Number(limit),
+        offset: Number(offset),
+      },
+    };
   },
   {
     query: t.Object({

@@ -29,7 +29,7 @@ export const getUserGames = new Elysia().get(
 
       if (gameIds.length === 0) {
         return {
-          games: [],
+          results: [],
           meta: { total: 0 },
         };
       }
@@ -63,7 +63,7 @@ export const getUserGames = new Elysia().get(
       });
 
       return {
-        games: gamesWithUserData,
+        results: gamesWithUserData,
         meta: { total: gamesWithUserData.length },
       };
     } catch (error) {

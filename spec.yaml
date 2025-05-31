@@ -491,7 +491,7 @@ components:
     UserGameResponse:
       type: object
       properties:
-        games:
+        results:
           type: array
           items:
             $ref: "#/components/schemas/UserGameWithUserData"
@@ -499,15 +499,11 @@ components:
           type: object
           properties:
             total:
-              oneOf:
-                - type: string
-                  pattern: '^\d+$'
-                  default: "0"
-                - type: number
+              type: number
           required:
             - total
       required:
-        - games
+        - results
         - meta
 
     UserGameWithUserData:
@@ -521,6 +517,26 @@ components:
             - userGameData
 
     UserResponse:
+      type: object
+      properties:
+        id:
+          type: number
+        image:
+          type: string
+        name:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+      required:
+        - id
+        - image
+        - name
+        - username
+        - email
+
+    PublicUserResponse:
       type: object
       properties:
         id:
@@ -651,7 +667,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
+                $ref: "#/components/schemas/PublicUserResponse"
         "404":
           description: User not found
           content:
@@ -706,6 +722,45 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GameListResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
+
+  /api/games/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      operationId: getApiGamesById
+      tags:
+        - Games
+      summary: Get a single game by ID
+      description: Retrieves detailed information about a specific game by its ID.
+      responses:
+        "200":
+          description: Game found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "400":
+          description: Invalid game ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
         "500":
           description: Internal server error
           content:
