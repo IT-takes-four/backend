@@ -428,6 +428,7 @@ components:
         endedAt:
           type: string
           nullable: true
+          description: Date when the game was finished or dropped. Only applicable for games with status 'finished' or 'dropped'.
         source:
           type: string
           enum:
@@ -575,6 +576,7 @@ components:
         endedAt:
           type: string
           nullable: true
+          description: Date when the game was finished or dropped. Only applicable for games with status 'finished' or 'dropped'.
       required:
         - gameId
         - status
@@ -599,6 +601,7 @@ components:
         endedAt:
           type: string
           nullable: true
+          description: Date when the game was finished or dropped. Only applicable for games with status 'finished' or 'dropped'.
       minProperties: 1
 
     ChatRequest:
@@ -626,6 +629,153 @@ components:
               - content
       required:
         - messages
+
+    GameExportData:
+      type: object
+      properties:
+        gameId:
+          type: number
+        gameName:
+          type: string
+        status:
+          $ref: "#/components/schemas/StatusEnum"
+        rating:
+          type: number
+          nullable: true
+        review:
+          type: string
+          nullable: true
+        platformId:
+          type: number
+        platformName:
+          type: string
+          nullable: true
+        addedAt:
+          type: string
+          nullable: true
+        endedAt:
+          type: string
+          nullable: true
+        source:
+          type: string
+      required:
+        - gameId
+        - gameName
+        - status
+        - platformId
+
+    GameExportResponse:
+      type: object
+      properties:
+        username:
+          type: string
+        exportedAt:
+          type: string
+        totalGames:
+          type: number
+        games:
+          type: array
+          items:
+            $ref: "#/components/schemas/GameExportData"
+      required:
+        - username
+        - exportedAt
+        - totalGames
+        - games
+
+    GameImportData:
+      type: object
+      properties:
+        gameId:
+          type: number
+        gameName:
+          type: string
+        status:
+          $ref: "#/components/schemas/StatusEnum"
+        rating:
+          type: number
+          minimum: 0
+          maximum: 10
+          nullable: true
+        review:
+          type: string
+          nullable: true
+        platformId:
+          type: number
+        endedAt:
+          type: string
+          nullable: true
+      required:
+        - gameId
+        - status
+        - platformId
+
+    GameImportRequest:
+      type: object
+      properties:
+        games:
+          type: array
+          items:
+            $ref: "#/components/schemas/GameImportData"
+        overwriteExisting:
+          type: boolean
+          default: false
+          description: Whether to overwrite existing games in the library
+      required:
+        - games
+
+    GameImportResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        imported:
+          type: number
+        skipped:
+          type: number
+        errors:
+          type: number
+        details:
+          type: object
+          properties:
+            importedGames:
+              type: array
+              items:
+                type: number
+            skippedGames:
+              type: array
+              items:
+                type: object
+                properties:
+                  gameId:
+                    type: number
+                  reason:
+                    type: string
+                required:
+                  - gameId
+                  - reason
+            errorGames:
+              type: array
+              items:
+                type: object
+                properties:
+                  gameId:
+                    type: number
+                  error:
+                    type: string
+                required:
+                  - gameId
+                  - error
+          required:
+            - importedGames
+            - skippedGames
+            - errorGames
+      required:
+        - message
+        - imported
+        - skipped
+        - errors
+        - details
 
 paths:
   /api/me:
@@ -1006,6 +1156,156 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerErrorResponse"
+
+  /api/user/{username}/games/export:
+    get:
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - json
+              - csv
+            default: json
+          description: Export format (json or csv)
+        - name: download
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+          description: Whether to return as downloadable file with proper headers
+      operationId: getApiUserByUsernameGamesExport
+      tags:
+        - User
+      summary: Export user's game library to downloadable file
+      description: >
+        Exports all games in the authenticated user's library as a downloadable file.
+        Backend generates the file with proper Content-Disposition headers for download.
+        Supports JSON and CSV formats. Username must match the authorized user.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Games exported successfully as downloadable file
+          headers:
+            Content-Disposition:
+              description: Attachment header for file download
+              schema:
+                type: string
+                example: 'attachment; filename="games-export-2024-01-15.json"'
+            Content-Type:
+              description: MIME type of the exported file
+              schema:
+                type: string
+                example: "application/json"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameExportResponse"
+            text/csv:
+              schema:
+                type: string
+                description: CSV format of the exported games
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                description: Binary file download
+        "403":
+          description: Forbidden — username mismatch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
+
+  /api/user/{username}/games/import:
+    post:
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      operationId: postApiUserByUsernameGamesImport
+      tags:
+        - User
+      summary: Import games to user's library from file upload
+      description: >
+        Imports games to the authenticated user's library from uploaded JSON or CSV file.
+        Backend handles file parsing, validation, and processing. Username must match the
+        authorized user. Can optionally overwrite existing games.
+        Note: endedAt field is only valid for games with status 'finished' or 'dropped'.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Games imported successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameImportResponse"
+        "400":
+          description: Bad request - invalid import data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
+        "403":
+          description: Forbidden — username mismatch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameImportRequest"
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: JSON or CSV file containing games to import
+                overwriteExisting:
+                  type: boolean
+                  default: false
+                  description: Whether to overwrite existing games in the library
 
   /api/chat/ai:
     post:
