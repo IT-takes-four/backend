@@ -1,6 +1,6 @@
 {
   "name": "@playdamnit/api-client",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Generated API client for PlayDamnit",
   "main": "index.js",
   "module": "index.js",
