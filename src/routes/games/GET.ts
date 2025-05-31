@@ -73,7 +73,10 @@ export const getGames = new Elysia().get(
     } catch (error) {
       console.error("Error fetching games:", error);
       set.status = 500;
-      return { error: "Internal server error" };
+      return {
+        error: "Internal server error",
+        message: "Failed to fetch games",
+      };
     }
   },
   {

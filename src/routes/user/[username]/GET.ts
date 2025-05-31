@@ -16,7 +16,8 @@ export const getUser = new Elysia().get(
     if (!data) {
       set.status = 404;
       return {
-        error: "User not found",
+        error: "Not found",
+        message: "User not found",
       };
     }
 

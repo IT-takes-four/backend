@@ -12,7 +12,7 @@ export const getGameById = new Elysia().get(
 
     if (Number.isNaN(gameId)) {
       set.status = 400;
-      return { error: "Invalid game ID" };
+      return { error: "Bad request", message: "Invalid game ID" };
     }
 
     const result = await db.query.game.findFirst({
@@ -30,7 +30,7 @@ export const getGameById = new Elysia().get(
 
     if (!result) {
       set.status = 404;
-      return { error: "Game not found" };
+      return { error: "Not found", message: "Game not found" };
     }
 
     return transformGameResponse(result);

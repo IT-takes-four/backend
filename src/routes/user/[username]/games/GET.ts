@@ -18,7 +18,7 @@ export const getUserGames = new Elysia().get(
 
       if (!userData) {
         set.status = 404;
-        return { error: "User not found" };
+        return { error: "Not found", message: "User not found" };
       }
 
       const userGamesList = await postgresDb.query.userGames.findMany({
@@ -69,7 +69,10 @@ export const getUserGames = new Elysia().get(
     } catch (error) {
       console.error("Error fetching user games:", error);
       set.status = 500;
-      return { error: "Internal server error" };
+      return {
+        error: "Internal server error",
+        message: "Failed to fetch user games",
+      };
     }
   },
   {

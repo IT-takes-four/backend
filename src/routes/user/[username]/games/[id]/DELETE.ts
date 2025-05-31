@@ -21,7 +21,10 @@ export const deleteUserGame = new Elysia().use(betterAuth).delete(
 
       if (!existingGame) {
         set.status = 404;
-        return { error: "Game not found in user's library" };
+        return {
+          error: "Not found",
+          message: "Game not found in user's library",
+        };
       }
 
       const [deletedGame] = await db
@@ -36,7 +39,10 @@ export const deleteUserGame = new Elysia().use(betterAuth).delete(
     } catch (error) {
       logger.exception(error);
       set.status = 500;
-      return { error: "Internal server error" };
+      return {
+        error: "Internal server error",
+        message: "Failed to remove game",
+      };
     }
   },
   {

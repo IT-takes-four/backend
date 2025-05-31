@@ -15,7 +15,7 @@ export const getMe = new Elysia().use(betterAuth).get(
 
       if (!userData) {
         set.status = 404;
-        return { error: "User not found" };
+        return { error: "Not found", message: "User not found" };
       }
 
       return {
@@ -28,7 +28,10 @@ export const getMe = new Elysia().use(betterAuth).get(
     } catch (err) {
       console.error("Error fetching current user:", err);
       set.status = 500;
-      return { error: "Internal server error" };
+      return {
+        error: "Internal server error",
+        message: "Failed to fetch user data",
+      };
     }
   },
   {

@@ -14,7 +14,10 @@ export const postUserGame = new Elysia().use(betterAuth).post(
     try {
       if (params.username !== user.username) {
         set.status = 403;
-        return { error: "You can only add games to your own library" };
+        return {
+          error: "Forbidden",
+          message: "You can only add games to your own library",
+        };
       }
 
       const existingGame = await db.query.userGames.findFirst({
@@ -26,7 +29,7 @@ export const postUserGame = new Elysia().use(betterAuth).post(
 
       if (existingGame) {
         set.status = 409;
-        return { error: "Game already exists in library" };
+        return { error: "Conflict", message: "Game already exists in library" };
       }
 
       const [inserted] = await db
@@ -51,7 +54,10 @@ export const postUserGame = new Elysia().use(betterAuth).post(
     } catch (error) {
       logger.exception(error);
       set.status = 500;
-      return { error: "Internal server error" };
+      return {
+        error: "Internal server error",
+        message: "Failed to add game to library",
+      };
     }
   },
   {

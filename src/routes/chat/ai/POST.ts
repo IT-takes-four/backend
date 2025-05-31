@@ -55,7 +55,8 @@ export const postAIChat = new Elysia().use(betterAuth).post(
       console.error("AI chat error:", error);
       set.status = 500;
       return {
-        error: "Something went wrong with the AI",
+        error: "Internal server error",
+        message: "Something went wrong with the AI",
       };
     }
   },

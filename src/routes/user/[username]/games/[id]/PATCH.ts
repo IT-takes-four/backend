@@ -14,13 +14,19 @@ export const patchUserGame = new Elysia().use(betterAuth).patch(
     try {
       if (params.username !== user.username) {
         set.status = 403;
-        return { error: "You can only update your own library" };
+        return {
+          error: "Forbidden",
+          message: "You can only update your own library",
+        };
       }
 
       const hasAnyField = Object.keys(body).length > 0;
       if (!hasAnyField) {
         set.status = 400;
-        return { error: "At least one field must be provided" };
+        return {
+          error: "Bad request",
+          message: "At least one field must be provided",
+        };
       }
 
       const gameId = Number(params.id);
@@ -31,7 +37,10 @@ export const patchUserGame = new Elysia().use(betterAuth).patch(
 
       if (!existing) {
         set.status = 404;
-        return { error: "Game not found in user's library" };
+        return {
+          error: "Not found",
+          message: "Game not found in user's library",
+        };
       }
 
       const updateValues = {
@@ -61,7 +70,10 @@ export const patchUserGame = new Elysia().use(betterAuth).patch(
     } catch (error) {
       logger.exception(error);
       set.status = 500;
-      return { error: "Internal server error" };
+      return {
+        error: "Internal server error",
+        message: "Failed to update game",
+      };
     }
   },
   {

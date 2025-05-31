@@ -46,6 +46,9 @@ components:
           type: string
           enum:
             - Forbidden
+        message:
+          type: string
+          description: Human readable error message
       required:
         - error
 
@@ -57,6 +60,9 @@ components:
           type: string
           enum:
             - Not found
+        message:
+          type: string
+          description: Human readable error message
       required:
         - error
 
@@ -68,6 +74,9 @@ components:
           type: string
           enum:
             - Conflict
+        message:
+          type: string
+          description: Human readable error message
       required:
         - error
 
@@ -79,6 +88,9 @@ components:
           type: string
           enum:
             - Internal server error
+        message:
+          type: string
+          description: Human readable error message
       required:
         - error
 
@@ -468,26 +480,6 @@ components:
         - message
         - game
 
-    UserGamePost:
-      type: object
-      properties:
-        gameId:
-          type: number
-        status:
-          $ref: "#/components/schemas/StatusEnum"
-        rating:
-          type: number
-          nullable: true
-        review:
-          type: string
-          nullable: true
-        platformId:
-          type: number
-      required:
-        - gameId
-        - status
-        - platformId
-
     UserGameResponse:
       type: object
       properties:
@@ -559,7 +551,7 @@ components:
         - username
         - games
 
-    UserGameRequest:
+    UserGameCreateRequest:
       type: object
       properties:
         gameId:
@@ -568,13 +560,19 @@ components:
           $ref: "#/components/schemas/StatusEnum"
         rating:
           type: number
+          minimum: 0
+          maximum: 10
         review:
           type: string
-        endedAt:
-          type: number
+          minLength: 3
+          maxLength: 5000
           nullable: true
         platformId:
           type: number
+        endedAt:
+          type: string
+          format: date-time
+          nullable: true
       required:
         - gameId
         - status
@@ -584,19 +582,19 @@ components:
     UserGameUpdateRequest:
       type: object
       properties:
-        gameId:
-          type: number
         status:
           $ref: "#/components/schemas/StatusEnum"
         rating:
           type: number
+          minimum: 0
+          maximum: 10
+          nullable: true
         review:
           type: string
-        endedAt:
-          type: number
           nullable: true
         platformId:
           type: number
+      minProperties: 1
 
     ChatRequest:
       type: object
@@ -885,7 +883,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserGamePost"
+                type: object
+                properties:
+                  message:
+                    type: string
+                    enum:
+                      - Game added successfully
+                  game:
+                    type: object
+                required:
+                  - message
+                  - game
         "400":
           description: Bad request
           content:
@@ -915,7 +923,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UserGameRequest"
+              $ref: "#/components/schemas/UserGameCreateRequest"
 
   /api/user/{username}/games/{id}:
     patch:
