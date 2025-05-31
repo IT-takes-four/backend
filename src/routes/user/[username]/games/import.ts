@@ -55,9 +55,6 @@ function parseCSV(csvContent: string): any[] {
         case "gameId":
           game.gameId = parseInt(value) || 0;
           break;
-        case "gameName":
-          game.gameName = value;
-          break;
         case "status":
           game.status = value;
           break;

@@ -685,8 +685,6 @@ components:
       properties:
         gameId:
           type: number
-        gameName:
-          type: string
         status:
           $ref: "#/components/schemas/StatusEnum"
         rating:
