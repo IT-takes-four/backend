@@ -33,7 +33,7 @@ export const deleteUserGame = new Elysia().use(betterAuth).delete(
         .returning();
 
       return {
-        message: "Game removed successfully",
+        message: "Removed successfully",
         id: deletedGame.gameId,
       };
     } catch (error) {
