@@ -65,7 +65,10 @@ export const patchUserGame = new Elysia().use(betterAuth).patch(
 
       return {
         message: "Game updated successfully",
-        game: updated,
+        game: {
+          ...updated,
+          rating: updated.rating ? Number(updated.rating) : null,
+        },
       };
     } catch (error) {
       logger.exception(error);

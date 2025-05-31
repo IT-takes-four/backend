@@ -457,7 +457,7 @@ components:
             status:
               $ref: "#/components/schemas/StatusEnum"
             rating:
-              type: string
+              type: number
               nullable: true
             review:
               type: string

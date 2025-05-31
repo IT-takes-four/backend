@@ -53,10 +53,11 @@ export const getUserGames = new Elysia().get(
           ...transformGameResponse(game),
           userGameData: {
             status: userGame?.status,
-            rating: userGame?.rating,
+            rating: userGame?.rating ? Number(userGame.rating) : null,
             review: userGame?.review,
             platformId: userGame?.platformId,
             addedAt: userGame?.addedAt,
+            endedAt: userGame?.endedAt,
             source: userGame?.source,
           },
         };
