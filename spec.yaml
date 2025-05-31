@@ -574,7 +574,6 @@ components:
           type: number
         endedAt:
           type: string
-          format: date-time
           nullable: true
       required:
         - gameId
@@ -597,6 +596,9 @@ components:
           nullable: true
         platformId:
           type: number
+        endedAt:
+          type: string
+          nullable: true
       minProperties: 1
 
     ChatRequest:

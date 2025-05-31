@@ -55,6 +55,9 @@ export const patchUserGame = new Elysia().use(betterAuth).patch(
         ...(body.platformId !== undefined && {
           platformId: body.platformId,
         }),
+        ...(body.endedAt !== undefined && {
+          endedAt: body.endedAt ? new Date(body.endedAt) : null,
+        }),
       };
 
       const [updated] = await db
@@ -102,6 +105,20 @@ export const patchUserGame = new Elysia().use(betterAuth).patch(
       rating: t.Optional(t.Number()),
       review: t.Optional(t.String()),
       platformId: t.Optional(t.Numeric()),
+      endedAt: t.Optional(
+        t.String({
+          transform: (value: string) => {
+            const date = new Date(value);
+            if (isNaN(date.getTime())) {
+              throw new Error("Invalid date format");
+            }
+            if (date > new Date()) {
+              throw new Error("Finished date cannot be in the future");
+            }
+            return value;
+          },
+        })
+      ),
     }),
   }
 );
