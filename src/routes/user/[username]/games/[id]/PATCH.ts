@@ -90,6 +90,7 @@ export const patchUserGame = new Elysia().use(betterAuth).patch(
             "playing",
             "dropped",
             "online",
+            "on_hold",
             "want_to_play",
             "backlog",
           ],

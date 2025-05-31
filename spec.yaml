@@ -422,7 +422,6 @@ components:
           nullable: true
         platformId:
           type: number
-          nullable: true
         addedAt:
           type: string
           nullable: true
@@ -452,7 +451,7 @@ components:
           type: object
           properties:
             userId:
-              type: number
+              type: string
             gameId:
               type: number
             status:
@@ -464,10 +463,8 @@ components:
               type: string
               nullable: true
             platformId:
-              type: string
-              pattern: '^\d+$'
-              default: "0"
-              nullable: true
+              type: number
+              default: 0
             source:
               type: string
             addedAt:
@@ -518,7 +515,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: string
         image:
           type: string
         name:
@@ -538,7 +535,7 @@ components:
       type: object
       properties:
         id:
-          type: number
+          type: string
         image:
           type: string
         name:
@@ -686,32 +683,20 @@ paths:
           in: query
           required: false
           schema:
-            oneOf:
-              - type: string
-                pattern: '^\d+$'
-                default: "100"
-              - type: number
-                default: 100
+            type: number
+            default: 100
         - name: offset
           in: query
           required: false
           schema:
-            oneOf:
-              - type: string
-                pattern: '^\d+$'
-                default: "0"
-              - type: number
-                default: 0
+            type: number
+            default: 0
         - name: platformId
           in: query
           required: false
           schema:
-            oneOf:
-              - type: string
-                pattern: '^\d+$'
-                default: "0"
-              - type: number
-                default: 0
+            type: number
+            default: 0
       operationId: getApiGames
       tags:
         - Games
@@ -784,22 +769,14 @@ paths:
           in: query
           required: false
           schema:
-            oneOf:
-              - type: string
-                pattern: '^\d+$'
-                default: "50"
-              - type: number
-                default: 50
+            type: number
+            default: 50
         - name: offset
           in: query
           required: false
           schema:
-            oneOf:
-              - type: string
-                pattern: '^\d+$'
-                default: "0"
-              - type: number
-                default: 0
+            type: number
+            default: 0
         - name: fresh
           in: query
           required: false

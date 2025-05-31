@@ -22,6 +22,8 @@ alwaysApply: false
 ├── .scripts
 │   └── update_structure.sh
 ├── api-client
+│   ├── .npmignore
+│   ├── custom-axios.ts
 │   ├── package.json
 │   ├── README.md
 │   └── tsconfig.json
@@ -65,13 +67,7 @@ alwaysApply: false
 ├── drizzle.sqlite.config.ts
 ├── entrypoint.sh
 ├── games.db
-├── openapi.yaml
 ├── package.json
-├── playdamnit-client
-│   ├── .npmignore
-│   ├── package.json
-│   ├── README.md
-│   └── tsconfig.json
 ├── README.md
 ├── scripts
 │   └── load-testing
@@ -129,5 +125,5 @@ alwaysApply: false
 │       └── time.ts
 └── tsconfig.json
 
-35 directories, 87 files
+34 directories, 84 files
 ```
