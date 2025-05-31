@@ -71,7 +71,6 @@ function parseCSV(csvContent: string): any[] {
           game.platformId = parseInt(value) || 0;
           break;
         case "endedAt":
-          // Only set endedAt if it's a valid date string and not empty
           game.endedAt = value && value.trim() !== "" ? value : null;
           break;
         default:

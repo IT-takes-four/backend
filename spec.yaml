@@ -647,9 +647,6 @@ components:
           nullable: true
         platformId:
           type: number
-        platformName:
-          type: string
-          nullable: true
         addedAt:
           type: string
           nullable: true

@@ -11,11 +11,11 @@ const logger = createLogger("user-export-games");
 
 function convertToCSV(games: any[]): string {
   if (games.length === 0) {
-    return "gameId,gameName,status,rating,review,platformId,platformName,addedAt,endedAt,source\n";
+    return "gameId,gameName,status,rating,review,platformId,addedAt,endedAt,source\n";
   }
 
   const headers =
-    "gameId,gameName,status,rating,review,platformId,platformName,addedAt,endedAt,source\n";
+    "gameId,gameName,status,rating,review,platformId,addedAt,endedAt,source\n";
 
   const rows = games.map((game) => {
     const escapeCsvField = (field: any): string => {
@@ -40,7 +40,6 @@ function convertToCSV(games: any[]): string {
       game.rating || "",
       escapeCsvField(game.review),
       game.platformId,
-      escapeCsvField(game.platformName),
       game.addedAt || "",
       game.endedAt || "",
       escapeCsvField(game.source),
@@ -92,7 +91,6 @@ export const exportUserGames = new Elysia().use(betterAuth).get(
 
         gamesData = games.map((game) => {
           const userGame = userGamesList.find((ug) => ug.gameId === game.id);
-          const platform = game.platforms?.[0]?.platform;
 
           // Only include endedAt for finished or dropped games
           const shouldIncludeEndedAt =
@@ -109,7 +107,6 @@ export const exportUserGames = new Elysia().use(betterAuth).get(
             rating: userGame?.rating ? Number(userGame.rating) : null,
             review: userGame?.review,
             platformId: userGame?.platformId || 0,
-            platformName: platform?.name || null,
             addedAt: userGame?.addedAt?.toISOString(),
             endedAt: endedAtValue,
             source: userGame?.source,
