@@ -6,6 +6,8 @@ import { db as sqliteDb } from "@/db/sqlite";
 import { userGames, user as userSchema } from "@/db/postgres/schema";
 import { betterAuth } from "@/lib/betterAuth";
 import { createLogger } from "@/utils/enhancedLogger";
+import { fetchIGDBByIds } from "@/utils/igdb/utils";
+import { enqueueGameWrite } from "@/utils/redis/sqliteWriter";
 
 const logger = createLogger("user-import-games");
 
@@ -54,6 +56,8 @@ function parseCSV(csvContent: string): any[] {
       switch (header) {
         case "gameId":
           game.gameId = parseInt(value) || 0;
+          break;
+        case "gameName":
           break;
         case "status":
           game.status = value;
@@ -124,6 +128,35 @@ function validateGameData(game: any): { valid: boolean; error?: string } {
   return { valid: true };
 }
 
+async function fetchAndSaveGameFromIGDB(gameId: number): Promise<boolean> {
+  try {
+    logger.info(`Fetching game ${gameId} from IGDB`);
+
+    const igdbGames = await fetchIGDBByIds([gameId]);
+
+    if (igdbGames.length === 0) {
+      logger.warn(`Game ${gameId} not found in IGDB`);
+      return false;
+    }
+
+    const igdbGame = igdbGames[0];
+
+    // Enqueue the game to be saved to our database
+    await enqueueGameWrite(igdbGame);
+
+    logger.info(
+      `Successfully enqueued game ${gameId} (${igdbGame.name}) for saving`
+    );
+    return true;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error(
+      `Failed to fetch and save game ${gameId} from IGDB: ${errorMessage}`
+    );
+    return false;
+  }
+}
+
 export const importUserGames = new Elysia().use(betterAuth).post(
   "/user/:username/games/import",
   async ({ params, user, body, set }) => {
@@ -156,6 +189,17 @@ export const importUserGames = new Elysia().use(betterAuth).post(
           overwriteExisting = body.overwriteExisting || false;
         } else if ("file" in body && body.file) {
           const file = body.file as File;
+
+          // Limit file size to prevent memory issues (10MB)
+          const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+          if (file.size > MAX_FILE_SIZE) {
+            set.status = 400;
+            return {
+              error: "Bad request",
+              message: `File too large. Maximum allowed: ${MAX_FILE_SIZE / (1024 * 1024)}MB, provided: ${(file.size / (1024 * 1024)).toFixed(2)}MB`,
+            };
+          }
+
           const content = await file.text();
 
           if (file.type === "text/csv" || file.name.endsWith(".csv")) {
@@ -198,14 +242,26 @@ export const importUserGames = new Elysia().use(betterAuth).post(
         };
       }
 
+      // Limit the number of games that can be imported in a single request
+      const MAX_IMPORT_GAMES = 1000;
+      if (gamesToImport.length > MAX_IMPORT_GAMES) {
+        set.status = 400;
+        return {
+          error: "Bad request",
+          message: `Too many games to import. Maximum allowed: ${MAX_IMPORT_GAMES}, provided: ${gamesToImport.length}`,
+        };
+      }
+
       const results = {
         imported: 0,
         skipped: 0,
         errors: 0,
+        fetchedFromIGDB: 0,
         details: {
           importedGames: [] as number[],
           skippedGames: [] as { gameId: number; reason: string }[],
           errorGames: [] as { gameId: number; error: string }[],
+          fetchedFromIGDBGames: [] as number[],
         },
       };
 
@@ -222,17 +278,54 @@ export const importUserGames = new Elysia().use(betterAuth).post(
         }
 
         try {
-          const gameExists = await sqliteDb.query.game.findFirst({
+          let gameExists = await sqliteDb.query.game.findFirst({
             where: (game, { eq }) => eq(game.id, gameData.gameId),
           });
 
           if (!gameExists) {
-            results.errors++;
-            results.details.errorGames.push({
-              gameId: gameData.gameId,
-              error: "Game not found in database",
-            });
-            continue;
+            // Try to fetch and save the game from IGDB
+            logger.info(
+              `Game ${gameData.gameId} not found in local database, attempting to fetch from IGDB`
+            );
+
+            const fetchedFromIGDB = await fetchAndSaveGameFromIGDB(
+              gameData.gameId
+            );
+
+            if (fetchedFromIGDB) {
+              // Wait for the game to be processed by the queue with retries
+              let retries = 0;
+              const maxRetries = 5;
+              const retryDelay = 500; // Start with 500ms
+
+              while (retries < maxRetries && !gameExists) {
+                await new Promise((resolve) =>
+                  setTimeout(resolve, retryDelay * (retries + 1))
+                );
+
+                gameExists = await sqliteDb.query.game.findFirst({
+                  where: (game, { eq }) => eq(game.id, gameData.gameId),
+                });
+
+                retries++;
+              }
+            }
+
+            if (!gameExists) {
+              results.errors++;
+              results.details.errorGames.push({
+                gameId: gameData.gameId,
+                error:
+                  "Game not found in database and could not be fetched from IGDB",
+              });
+              continue;
+            } else {
+              results.fetchedFromIGDB++;
+              results.details.fetchedFromIGDBGames.push(gameData.gameId);
+              logger.info(
+                `Successfully fetched and saved game ${gameData.gameId} from IGDB`
+              );
+            }
           }
 
           const existingUserGame = await postgresDb.query.userGames.findFirst({
@@ -319,10 +412,11 @@ export const importUserGames = new Elysia().use(betterAuth).post(
       }
 
       return {
-        message: `Import completed: ${results.imported} imported, ${results.skipped} skipped, ${results.errors} errors`,
+        message: `Import completed: ${results.imported} imported, ${results.skipped} skipped, ${results.errors} errors, ${results.fetchedFromIGDB} fetched from IGDB`,
         imported: results.imported,
         skipped: results.skipped,
         errors: results.errors,
+        fetchedFromIGDB: results.fetchedFromIGDB,
         details: results.details,
       };
     } catch (error) {

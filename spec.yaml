@@ -1250,6 +1250,7 @@ paths:
         Backend handles file parsing, validation, and processing. Username must match the
         authorized user. Can optionally overwrite existing games.
         Note: endedAt field is only valid for games with status 'finished' or 'dropped'.
+        Limits: Maximum 1000 games per import, maximum file size 10MB.
       security:
         - cookieAuth: []
       responses:
