@@ -7,7 +7,8 @@ import { userGames, user as userSchema } from "@/db/postgres/schema";
 import { betterAuth } from "@/lib/betterAuth";
 import { createLogger } from "@/utils/enhancedLogger";
 import { fetchIGDBByIds } from "@/utils/igdb/utils";
-import { enqueueGameWrite } from "@/utils/redis/sqliteWriter";
+import { enqueueGamesBatchWrite } from "@/utils/redis/sqliteWriter";
+import { transformIGDBResponse } from "@/utils/igdb/transformers";
 
 const logger = createLogger("user-import-games");
 
@@ -128,32 +129,42 @@ function validateGameData(game: any): { valid: boolean; error?: string } {
   return { valid: true };
 }
 
-async function fetchAndSaveGameFromIGDB(gameId: number): Promise<boolean> {
+async function fetchAndSaveGamesFromIGDB(
+  gameIds: number[]
+): Promise<{ success: number[]; failed: number[] }> {
   try {
-    logger.info(`Fetching game ${gameId} from IGDB`);
-
-    const igdbGames = await fetchIGDBByIds([gameId]);
-
-    if (igdbGames.length === 0) {
-      logger.warn(`Game ${gameId} not found in IGDB`);
-      return false;
+    if (gameIds.length === 0) {
+      return { success: [], failed: [] };
     }
 
-    const igdbGame = igdbGames[0];
+    logger.info(
+      `Fetching ${gameIds.length} games from IGDB: ${gameIds.join(", ")}`
+    );
 
-    // Enqueue the game to be saved to our database
-    await enqueueGameWrite(igdbGame);
+    const igdbGames = await fetchIGDBByIds(gameIds);
+
+    if (igdbGames.length === 0) {
+      logger.warn(`No games found in IGDB for IDs: ${gameIds.join(", ")}`);
+      return { success: [], failed: gameIds };
+    }
+
+    // Transform the games for our database format
+    const transformedGames = igdbGames.map(transformIGDBResponse);
+
+    // Enqueue all games to be saved to our database in a batch
+    await enqueueGamesBatchWrite(transformedGames, `import-${Date.now()}`);
+
+    const foundGameIds = igdbGames.map((game) => game.id);
+    const failedGameIds = gameIds.filter((id) => !foundGameIds.includes(id));
 
     logger.info(
-      `Successfully enqueued game ${gameId} (${igdbGame.name}) for saving`
+      `Successfully enqueued ${foundGameIds.length} games for saving. Failed: ${failedGameIds.length}`
     );
-    return true;
+    return { success: foundGameIds, failed: failedGameIds };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error(
-      `Failed to fetch and save game ${gameId} from IGDB: ${errorMessage}`
-    );
-    return false;
+    logger.error(`Failed to fetch and save games from IGDB: ${errorMessage}`);
+    return { success: [], failed: gameIds };
   }
 }
 
@@ -265,6 +276,10 @@ export const importUserGames = new Elysia().use(betterAuth).post(
         },
       };
 
+      // First pass: validate all games and collect missing game IDs
+      const validGames: any[] = [];
+      const missingGameIds: number[] = [];
+
       for (const gameData of gamesToImport) {
         const validation = validateGameData(gameData);
 
@@ -277,55 +292,102 @@ export const importUserGames = new Elysia().use(betterAuth).post(
           continue;
         }
 
+        const gameExists = await sqliteDb.query.game.findFirst({
+          where: (game, { eq }) => eq(game.id, gameData.gameId),
+        });
+
+        if (gameExists) {
+          validGames.push(gameData);
+        } else {
+          missingGameIds.push(gameData.gameId);
+          validGames.push(gameData); // We'll process this after fetching from IGDB
+        }
+      }
+
+      let fetchedGameIds: number[] = [];
+      if (missingGameIds.length > 0) {
+        logger.info(
+          `Found ${missingGameIds.length} games not in local database, fetching from IGDB: ${missingGameIds.join(", ")}`
+        );
+
+        const fetchResult = await fetchAndSaveGamesFromIGDB(missingGameIds);
+        fetchedGameIds = fetchResult.success;
+
+        results.fetchedFromIGDB = fetchedGameIds.length;
+        results.details.fetchedFromIGDBGames = fetchedGameIds;
+
+        for (const failedId of fetchResult.failed) {
+          results.errors++;
+          results.details.errorGames.push({
+            gameId: failedId,
+            error:
+              "Game not found in database and could not be fetched from IGDB",
+          });
+        }
+
+        if (fetchedGameIds.length > 0) {
+          logger.info(
+            `Waiting for ${fetchedGameIds.length} games to be processed by the queue...`
+          );
+
+          let retries = 0;
+          const maxRetries = 10;
+          const retryDelay = 1000; // Start with 1 second for batch processing
+
+          while (retries < maxRetries) {
+            await new Promise((resolve) => setTimeout(resolve, retryDelay));
+
+            const availableGames = await Promise.all(
+              fetchedGameIds.map(async (gameId) => {
+                const game = await sqliteDb.query.game.findFirst({
+                  where: (game, { eq }) => eq(game.id, gameId),
+                });
+                return game ? gameId : null;
+              })
+            );
+
+            const availableGameIds = availableGames.filter(
+              (id) => id !== null
+            ) as number[];
+
+            if (availableGameIds.length === fetchedGameIds.length) {
+              logger.info(
+                `All ${fetchedGameIds.length} games are now available in the database`
+              );
+              break;
+            }
+
+            retries++;
+            logger.info(
+              `Retry ${retries}/${maxRetries}: ${availableGameIds.length}/${fetchedGameIds.length} games available`
+            );
+          }
+        }
+      }
+
+      // Second pass: process all valid games
+      for (const gameData of validGames) {
+        // Skip if this game was in the failed fetch list
+        if (
+          missingGameIds.includes(gameData.gameId) &&
+          !fetchedGameIds.includes(gameData.gameId)
+        ) {
+          continue; // Already marked as error above
+        }
+
         try {
-          let gameExists = await sqliteDb.query.game.findFirst({
+          // Final check that the game exists (should be true for all at this point)
+          const gameExists = await sqliteDb.query.game.findFirst({
             where: (game, { eq }) => eq(game.id, gameData.gameId),
           });
 
           if (!gameExists) {
-            // Try to fetch and save the game from IGDB
-            logger.info(
-              `Game ${gameData.gameId} not found in local database, attempting to fetch from IGDB`
-            );
-
-            const fetchedFromIGDB = await fetchAndSaveGameFromIGDB(
-              gameData.gameId
-            );
-
-            if (fetchedFromIGDB) {
-              // Wait for the game to be processed by the queue with retries
-              let retries = 0;
-              const maxRetries = 5;
-              const retryDelay = 500; // Start with 500ms
-
-              while (retries < maxRetries && !gameExists) {
-                await new Promise((resolve) =>
-                  setTimeout(resolve, retryDelay * (retries + 1))
-                );
-
-                gameExists = await sqliteDb.query.game.findFirst({
-                  where: (game, { eq }) => eq(game.id, gameData.gameId),
-                });
-
-                retries++;
-              }
-            }
-
-            if (!gameExists) {
-              results.errors++;
-              results.details.errorGames.push({
-                gameId: gameData.gameId,
-                error:
-                  "Game not found in database and could not be fetched from IGDB",
-              });
-              continue;
-            } else {
-              results.fetchedFromIGDB++;
-              results.details.fetchedFromIGDBGames.push(gameData.gameId);
-              logger.info(
-                `Successfully fetched and saved game ${gameData.gameId} from IGDB`
-              );
-            }
+            results.errors++;
+            results.details.errorGames.push({
+              gameId: gameData.gameId,
+              error: "Game still not available after IGDB fetch",
+            });
+            continue;
           }
 
           const existingUserGame = await postgresDb.query.userGames.findFirst({
